@@ -1,0 +1,22 @@
+{
+  "name": "cmpt-432n-saltarelli",
+  "version": "1.0.0",
+  "description": "A functional Compiler application developed in TypeScript. Project for CMPT 432N-620 at Marist College 2021",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casaltarelli/CMPT-432N-Saltarelli.git"
+  },
+  "author": "Christian Saltarelli",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/casaltarelli/CMPT-432N-Saltarelli/issues"
+  },
+  "homepage": "https://github.com/casaltarelli/CMPT-432N-Saltarelli#readme",
+  "devDependencies": {
+    "typescript": "^4.2.2"
+  }
+}
