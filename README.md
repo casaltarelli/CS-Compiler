@@ -3,7 +3,6 @@ Browser-based Compiler in TypeScript
 
 This is Christian Saltarelli's Design of Compiler's class project.
 See https://www.labouseur.com/courses/compilers/ for details.
-It was originally developed by Alan.
 
 Setup TypeScript
 ================
