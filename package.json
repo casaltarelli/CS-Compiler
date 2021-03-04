@@ -18,5 +18,6 @@
   "homepage": "https://github.com/casaltarelli/CMPT-432N-Saltarelli#readme",
   "devDependencies": {
     "typescript": "^4.2.2"
-  }
+  },
+  "dependencies": {}
 }
