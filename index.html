@@ -3,8 +3,8 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <meta name="author"             content="Christian Saltarelli" />
-    <link rel="stylesheet" href="cs-main.css" type="text/css" media="screen" />
     <link rel="stylesheet" href="assets/css/foundation.css">
+    <link rel="stylesheet" href="cs-main.css" type="text/css" media="screen" />
     <title>
         CS Compiler - A browser-based virtual Compiler in TypeScript
     </title>
@@ -19,12 +19,71 @@
     <!-- TODO: Create GLaDOS Testing Functionality -->
 </head>
 
-<body onload="onDocumentLoad()">
-    <h1> Hello World </h1>
+<body>
     <section class="main-nav">
-
+        <div class="grid-container">
+            <div class="cell large-12">
+                <h1 class="text-center title-text"><a id="main" href="#">CS Compiler</a></h1>
+                <div class="seperator"></div>
+            </div>
+            <div class="cell large-12">
+               <div class="main-menu">
+                   <input type="button"
+                          id = "btnCompile"
+                          class="menu-button"
+                          value="COMPILE"
+                          tabindex="0"
+                          onclick="">
+               </div>
+            </div>
+        </div>
     </section>
     <section class="compiler">
+        <div class="grid-x grid-container">
+            <div class="cell large-6 medium-12 medium-order-1 space-right">
+                <div class="editor">
+                    <div class="grid-x">
+                        <div class="lines cell large-1">
+                            <div class="grid-y grid-frame">
+                                <div class="cell line-number">1</div>
+                                <div class="cell line-number">2</div>
+                                <div class="cell line-number">3</div>
+                                <div class="cell line-number">4</div>
+                                <div class="cell line-number">5</div>
+                                <div class="cell line-number">6</div>
+                                <div class="cell line-number">7</div>
+                                <div class="cell line-number">8</div>
+                                <div class="cell line-number">9</div>
+                                <div class="cell line-number">10</div>
+                                <div class="cell line-number">11</div>
+                                <div class="cell line-number">12</div>
+                                <div class="cell line-number">13</div>
+                                <div class="cell line-number">14</div>
+                                <div class="cell line-number">15</div>
+                                <div class="cell line-number">16</div>
+                                <div class="cell line-number">17</div>
+                                <div class="cell line-number">18</div>
+                                <div class="cell line-number">19</div>
+                                <div class="cell line-number">20</div>
+                                <div class="cell line-number">21</div>
+                                <div class="cell line-number">22</div>
+                                <div class="cell line-number">23</div>
+                                <div class="cell line-number">24</div>
+                                <div class="cell line-number">25</div>
+                            </div>
+                        </div>
+                        <div class="input-container cell large-11">
+                            <textarea class="user-input"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cell large-6 medium-12 medium-order-2 space-left">
+                <div class="logger">
+                    <textarea class="log-output" readonly></textarea>
+                </div>
+            </div>
+        </div>
 
     </section>
 

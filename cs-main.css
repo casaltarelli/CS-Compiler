@@ -1,3 +1,137 @@
 /* CS-MAIN.css */
 
+/* Font Families */
+@font-face {
+    font-family: 'Source Code Regular';
+    src: url('assets/fonts/sourcecodepro-regular-webfont.woff2') format('woff2'),
+         url('assets/fonts/sourcecodepro-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Helvetica Neue Medium';
+    src: url('assets/fonts/helveticaneue_medium-webfont.woff2') format('woff2'),
+         url('assets/fonts/helveticaneue_medium-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* General/Element */
+html, body {
+    margin: 0 auto;
+    height: 100vw;
+}
+
+body {
+    background-color: #F7F6FB;
+}
+
+/* -- Main */
+.title-text {
+    font-family: "Source Code Regular";
+    font-size: 25px;
+
+    margin-top: 20px;
+}
+
+#main {
+    color: #000000;
+}
+
+#main:hover {
+    color: #202020;    
+}
+
+.seperator {
+    height: 3px;
+    width: 50px;
+    margin: 0 auto;
+
+    background-color: #FFBB5C;
+}
+
+/* -- Menu */
+.main-menu {
+    width: 100vw;
+    padding-top: 50px;
+    text-align: left;
+}
+.menu-button {
+    height: 35px;
+    width: 150px;
+
+    font-family: "Helvetica Neue Medium";
+    font-size: 12px;
+    letter-spacing: 1px;
+
+    border: 2px solid #989898;
+}
+
+#btnCompile {
+    color: #000000;
+    background-color: #F7F6FB;
+    transition: all 0.6s;
+}
+
+#btnCompile:hover {
+    background-color: #FFBB5C;
+    color: #F7F6FB;
+    
+}
+
+/* -- Compiler */
+.compiler {
+    margin-top: 30px;
+}
+
+/* - Editor */
+.editor {
+    width: 500px;
+    border: 2px solid #989898;
+}
+
+.lines {
+    width: 30px;
+    border-right: 1px solid #989898;
+    background-color: #F5F3F4;
+}
+
+.line-number {
+    padding-right: 10px;
+
+    font-family:'Courier New', Courier, monospace;
+    font-size: 13px;
+
+    text-align: right;
+}
+
+.user-input {
+    font-family:'Courier New', Courier, monospace;
+    font-size: 13px;
+    
+    height: 100%;
+    resize: none;
+    padding: 0;
+}
+
+/* - Logger */
+.logger {
+    width: 500px;
+    height: 100%;
+    float: right;
+
+    border: 2px solid #989898;
+}
+
+.log-output {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+
+    resize: none;
+}
+
+.log-output[readonly] {
+    background-color: #FFFFFF;
+}
