@@ -56,6 +56,9 @@ body {
     width: 100vw;
     padding-top: 50px;
     text-align: left;
+
+    position: relative;
+    display: inline-block;
 }
 .menu-button {
     height: 35px;
@@ -68,16 +71,43 @@ body {
     border: 2px solid #989898;
 }
 
-#btnCompile {
+#btn-compile {
     color: #000000;
     background-color: #F7F6FB;
     transition: all 0.6s;
 }
 
-#btnCompile:hover {
+#btn-compile:hover {
     background-color: #FFBB5C;
     color: #F7F6FB;
     
+}
+
+#btn-tests {
+    width: 50px;
+
+    position: relative;
+    display: inline-block;
+
+    transition: all 0.6s;
+}
+
+#btn-tests:hover .menu-tests-content {
+    display: block; 
+}
+
+.menu-tests-content {
+    display: none;
+    position: absolute;
+    z-index: 1;
+
+    transition: all 0.3s;
+}
+
+.menu-test-content a {
+    color: #000000;
+    text-decoration: none;
+    display: block;
 }
 
 /* -- Compiler */
@@ -134,4 +164,13 @@ body {
 
 .log-output[readonly] {
     background-color: #FFFFFF;
+}
+
+.log-output:focus {
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+
+    border: none;
+    outline: none;
 }

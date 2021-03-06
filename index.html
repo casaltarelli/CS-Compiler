@@ -10,10 +10,10 @@
     </title>
 
     <!-- Global CONSTANTS and _Variables. Must be included first. -->
-    <!-- TODO: Create Global.js File in Source -->
+    <script type="text/javascript" src="distrib/global.js"></script>
 
     <!-- Compiler Routines -->
-    <!-- TODO: Create Lexer Routine -->
+    <script type="text/javascript" src="distrib/logger.js"></script>
 
     <!-- Other Routines -->
     <!-- TODO: Create GLaDOS Testing Functionality -->
@@ -28,11 +28,23 @@
             </div>
             <div class="cell large-12">
                <div class="main-menu">
-                   <input type="button"
-                          id = "btnCompile"
+                    <input type="button"
+                          id = "btn-tests"
+                          class="menu-button"
+                          value="&#8681"
+                          tabindex="0"
+                          onclick="">
+                    <div class="menu-tests-content">
+                        <a onclick="">Test</a>
+                        <a onclick="">Test</a>
+                        <a onclick="">Test</a>
+                    </div>
+                
+                    <input type="button"
+                          id = "btn-compile"
                           class="menu-button"
                           value="COMPILE"
-                          tabindex="0"
+                          tabindex="1"
                           onclick="">
                </div>
             </div>
@@ -80,11 +92,10 @@
             </div>
             <div class="cell large-6 medium-12 medium-order-2 space-left">
                 <div class="logger">
-                    <textarea class="log-output" readonly></textarea>
+                    <textarea class="log-output" id="log" readonly></textarea>
                 </div>
             </div>
         </div>
-
     </section>
 
     <!-- Foundation Dependencies-->
