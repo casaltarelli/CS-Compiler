@@ -17,10 +17,19 @@ var _Stage = "Lexer";   // Preset to Lexer for first stage of Compilation
 var _PID = 1;           // ID for Current Program
 
 // Compiler 
-var _Compiler: Compiler.Compiler;
+var _Compiler: CSCompiler.Compiler;
 
 // Logger
-var _Log: Compiler.Logger;
+var _Log: CSCompiler.Logger;
 
 // Lexer
-var _Lexer: Compiler.Lexer;
+var _Lexer: CSCompiler.Lexer;
+
+// OnLoad
+var onDocumentLoad = function() {
+   // Instantiate our Compiler
+   _Compiler = new CSCompiler.Compiler; 
+   _Compiler.init();
+
+   console.log("Compiler Initiated");
+}

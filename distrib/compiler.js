@@ -5,18 +5,31 @@
     Handeling all the nuances and computing through calls to aspects of its system.
 
 ----- */
-var Compiler;
-(function (Compiler_1) {
+var CSCompiler;
+(function (CSCompiler) {
     var Compiler = /** @class */ (function () {
         function Compiler() {
         }
         Compiler.prototype.init = function () {
             // Initalize our Log
-            _Log = new Compiler_1.Logger();
+            _Log = new CSCompiler.Logger();
             // Initalize Stages
-            //_Lexer = new Lexer();
+            _Lexer = new CSCompiler.Lexer();
+        };
+        /**
+         * compile()
+         * - Called when User hits the Compile Button, handles
+         *   input read request to logger as well as passing of information
+         *   to the various stages of our compilation.
+         */
+        Compiler.compile = function () {
+            // Get User Input
+            var source = _Log.input();
+            // Validate Input from User
+            if (source) {
+            }
         };
         return Compiler;
     }());
-    Compiler_1.Compiler = Compiler;
-})(Compiler || (Compiler = {}));
+    CSCompiler.Compiler = Compiler;
+})(CSCompiler || (CSCompiler = {}));

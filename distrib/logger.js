@@ -4,8 +4,8 @@
     The Logger is used to output all relative information to our User throughout the compilation of a program.
 
 ----- */
-var Compiler;
-(function (Compiler) {
+var CSCompiler;
+(function (CSCompiler) {
     var Logger = /** @class */ (function () {
         function Logger(log, mode) {
             if (log === void 0) { log = document.getElementById("log-output"); }
@@ -21,13 +21,25 @@ var Compiler;
          * - Input handles reading all data for a respective
          *   compililation request. Breaksdown Source Data for
          *   each seperate program contained in our Input Field.
+         *
+         * (Not sure if this is the right place to handle this)
          */
         Logger.prototype.input = function () {
-            // Get Input Textarea Refernece
+            // Get Input Textarea Referenece
             var inputElement = document.getElementById("user-input");
-            // Collect Program(s) + Split
-            var sourceData = inputElement.value.split("$");
-            return sourceData;
+            // Verify Input
+            if (inputElement.value.trim() != "") {
+                // Reset Self for new Compilation Request
+                this.reset();
+                // Collect Program(s) + Split on End Marker
+                var sourceData = inputElement.value.trim().split(/(?<=[$])/g); // Use ?<=[] assertion to keep our $ delimeter
+                return sourceData;
+            }
+            else {
+                // Prompt User for Empty Input
+                this.output({ level: "INFO", data: "What in tarnation? Don't waste my time..." });
+                return null;
+            }
         };
         /**
          * output(msg)
@@ -39,30 +51,24 @@ var Compiler;
             // Determine Msg Type for Output Formatting
             switch (msg.level) {
                 case "INFO":
-                    this.log.value += "INFO " + msg.data;
+                    this.log.value += "INFO - " + msg.data + "\n";
+                    break;
                 case "DEBUG":
                     this.log.value += "DEBUG - " + _Stage +
                         +" - " + msg.data.token.type
                         + " [ " + msg.data.token.value + " ] "
                         + " at line: " + msg.data.token.loc.line
-                        + " col: " + msg.data.token.loc.col;
+                        + " col: " + msg.data.token.loc.col + "\n";
                     break;
                 case "WARN":
-                    // Update Color for WARN Type
-                    this.log.style.color = "#FCBF49";
-                    this.log.value += "WARN - " + _Stage + msg.data;
-                    // Reset Color
-                    this.log.style.color = "000000";
+                    this.log.value += "WARN - " + _Stage + " - " + msg.data + "\n";
                     break;
                 case "ERROR":
-                    // Update Color for ERROR Type
-                    this.log.style.color = "#D62828";
-                    this.log.value += "ERROR - " + _Stage + msg.data;
-                    // Reset Color
-                    this.log.style.color = "000000";
+                    this.log.value += "ERROR - " + _Stage + " - " + msg.data + "\n";
                     break;
                 default:
                     console.log("Log exception: Invalid Message Type");
+                    break;
             }
         };
         /**
@@ -82,5 +88,5 @@ var Compiler;
         };
         return Logger;
     }());
-    Compiler.Logger = Logger;
-})(Compiler || (Compiler = {}));
+    CSCompiler.Logger = Logger;
+})(CSCompiler || (CSCompiler = {}));

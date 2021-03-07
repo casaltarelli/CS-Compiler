@@ -6,7 +6,7 @@
 
 ----- */
 
-module Compiler {
+module CSCompiler {
     export class Compiler {
         constructor () {}
 
@@ -15,8 +15,26 @@ module Compiler {
             _Log = new Logger();
 
             // Initalize Stages
-            //_Lexer = new Lexer();
+            _Lexer = new Lexer();
+        }
+
+        /**
+         * compile()
+         * - Called when User hits the Compile Button, handles
+         *   input read request to logger as well as passing of information 
+         *   to the various stages of our compilation.
+         */
+        public static compile():void {
+            // Get User Input
+            var source = _Log.input(); 
+
+            // Validate Input from User
+            if (source) {
+
+            }
 
         }
+
+
     }
 }

@@ -5,8 +5,8 @@
     All Tokens are based on our Grammar List.
 
 ----- */
-var Compiler;
-(function (Compiler) {
+var CSCompiler;
+(function (CSCompiler) {
     var Lexer = /** @class */ (function () {
         function Lexer(TokenStream, Errors, Warnings, line, col, inQuote, inComment, foundEOP, program) {
             if (TokenStream === void 0) { TokenStream = []; }
@@ -36,5 +36,5 @@ var Compiler;
         Lexer.prototype.emitWarning = function () { };
         return Lexer;
     }());
-    Compiler.Lexer = Lexer;
-})(Compiler || (Compiler = {}));
+    CSCompiler.Lexer = Lexer;
+})(CSCompiler || (CSCompiler = {}));

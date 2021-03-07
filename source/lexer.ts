@@ -6,7 +6,7 @@
 
 ----- */
 
-module Compiler {
+module CSCompiler {
     export class Lexer { 
         constructor(public TokenStream = [],
                     public Errors = [],

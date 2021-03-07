@@ -23,7 +23,7 @@
     <!-- TODO: Create GLaDOS Testing Functionality -->
 </head>
 
-<body>
+<body onload="onDocumentLoad()">
     <section class="main-nav">
         <div class="grid-container">
             <div class="cell large-12">
@@ -49,14 +49,15 @@
                           class="menu-button"
                           value="COMPILE"
                           tabindex="1"
-                          onclick="">
+                          onclick="CSCompiler.Compiler.compile();">
                </div>
             </div>
         </div>
     </section>
     <section class="compiler">
         <div class="grid-x grid-container">
-            <div class="cell large-6 medium-12 medium-order-1 space-right">
+            <div class="cell large-6 medium-12 medium-order-1">
+                <h4 class="section-name">EDITOR</h4>
                 <div class="editor">
                     <div class="grid-x">
                         <div class="lines cell large-1">
@@ -94,12 +95,38 @@
                     </div>
                 </div>
             </div>
-            <div class="cell large-6 medium-12 medium-order-2 space-left">
-                <div class="logger">
-                    <textarea class="log-output" id="log-output" readonly></textarea>
+            <div class="cell large-6 medium-12 medium-order-2">
+                <h4 class="section-name push-left">LOG</h4>
+                <div class="logger" id="log-container">
+                    <div class="grid-x">
+                        <div class="cell large-12">
+                            <textarea class="log-output" id="log-output" readonly></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </section>
+
+    <section class="footer">
+        <div class="grid-container">
+            <div class="cell large-12">
+                <div class="grid-x align-middle">
+                    <div class="cell large-4 align-middle">
+                        <p class="copyright">COPYRIGHT &copy; <script>document.write(new Date().getFullYear())</script> CHRISTIAN SALTARELLI.</p>
+                    </div>
+                    <div class="cell large-8">
+                        <ul class="menu footer-menu">
+                            <li><a href="assets/pdf/grammar.pdf" target="_blank">GRAMMAR</a></li>
+                            <li><a href="https://casaltarelli.com" target="_blank">SITE</a></li>
+                            <li><a href="https://linkedin.com/in/casaltarelli/" target="_blank">LINKEDIN</a></li>
+                            <li><a href="https://github.com/casaltarelli/CMPT-432N-Saltarelli" target="_blank">GITHUB</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
     </section>
 
     <!-- Foundation Dependencies-->

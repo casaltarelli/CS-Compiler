@@ -7,7 +7,7 @@
     RegEx Object = [Priority, Name, RegEx, Action]
 
     We use ^ assertion for all regular expressions to only accept cases in which from index 0 and on satisifes the test case
-        - e.g "if " --> Will give a valid match to "/^if/"
+        - e.g "if " --> Will give a valid match to "/^if/" but " if" will not
 
     Priority Levels:
        - 0: Space/New Line or Undefined/Reserved Characters
@@ -26,7 +26,7 @@ var _Grammar = [
     { priority: 1, name: "R_COMM", regex: "/^\*\//", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.inComment = false; } },
     { priority: 1, name: "QUOTE", regex: '/^"/', action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.inQuote = true || false ? false : true; } },
     { priority: 0, name: "BREAK", regex: "/^\n/", action: function () { _Lexer.line++; } },
-    { priority: 1, name: "UNDEFINED", regex: "/^[A-Z]|[~`!@#%^&:;'-,.<>?/\|\/]/", action: function (value) { _Lexer.emitError(value); } },
+    { priority: 0, name: "UNDEFINED", regex: "/^[A-Z]|[~`!@#%^&:;'-,.<>?/\|\/]/", action: function (value) { _Lexer.emitError(value); } },
     // Operators
     { priority: 2, name: "ASSIGN_OP", regex: "/^=/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
     { priority: 1, name: "BOOL_OP", regex: "/^==|^!=/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },

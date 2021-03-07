@@ -5,7 +5,7 @@
 
 ----- */
 
-    module Compiler {
+    module CSCompiler {
         export class Logger {
             
             constructor(public log = <HTMLTextAreaElement>document.getElementById("log-output"),
@@ -20,15 +20,31 @@
              * - Input handles reading all data for a respective
              *   compililation request. Breaksdown Source Data for
              *   each seperate program contained in our Input Field. 
+             * 
+             * (Not sure if this is the right place to handle this)
              */
             public input(): string[] {
-                // Get Input Textarea Refernece
+                // Get Input Textarea Referenece
                 var inputElement = <HTMLTextAreaElement>document.getElementById("user-input");
 
-                // Collect Program(s) + Split
-                var sourceData = inputElement.value.split("$");
+                // Verify Input
+                if (inputElement.value.trim() != "") {
+                    // Reset Self for new Compilation Request
+                    this.reset();
 
-                return sourceData;
+                    // Collect Program(s) + Split on End Marker
+                    var sourceData = inputElement.value.trim().split(/(?<=[$])/g); // Use ?<=[] assertion to keep our $ delimeter
+
+                    return sourceData;
+
+                } else {
+                    // Prompt User for Empty Input
+                    this.output({level: "INFO", data: "What in tarnation? Don't waste my time..."})
+
+                    return null;
+                }
+
+                
             }
 
             /**
@@ -41,40 +57,28 @@
                 // Determine Msg Type for Output Formatting
                 switch(msg.level) {
                     case "INFO":
-                        this.log.value += "INFO " + msg.data;
+                        this.log.value += "INFO - " + msg.data + "\n";
+                        break;
 
                     case "DEBUG":
                         this.log.value += "DEBUG - " + _Stage +  
                                             + " - " + msg.data.token.type 
                                             + " [ " + msg.data.token.value + " ] "
                                             + " at line: " + msg.data.token.loc.line
-                                            + " col: " + msg.data.token.loc.col;
+                                            + " col: " + msg.data.token.loc.col + "\n";
                         break;
 
                     case "WARN":
-                        // Update Color for WARN Type
-                        this.log.style.color = "#FCBF49";
-
-                        this.log.value += "WARN - " + _Stage + msg.data;
-
-                        // Reset Color
-                        this.log.style.color = "000000";
-
+                        this.log.value += "WARN - " + _Stage + " - " + msg.data + "\n";
                         break;
 
                     case "ERROR":
-                        // Update Color for ERROR Type
-                        this.log.style.color = "#D62828";
-
-                        this.log.value += "ERROR - " + _Stage + msg.data;
-
-                        // Reset Color
-                        this.log.style.color = "000000";
-
+                        this.log.value += "ERROR - " + _Stage + " - " + msg.data + "\n";
                         break;
 
                     default: 
                         console.log("Log exception: Invalid Message Type");
+                        break;
                 }
 
             }

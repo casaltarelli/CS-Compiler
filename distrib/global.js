@@ -19,3 +19,10 @@ var _Compiler;
 var _Log;
 // Lexer
 var _Lexer;
+// OnLoad
+var onDocumentLoad = function () {
+    // Instantiate our Compiler
+    _Compiler = new CSCompiler.Compiler;
+    _Compiler.init();
+    console.log("Compiler Initiated");
+};

@@ -7,7 +7,7 @@
     RegEx Object = [Priority, Name, RegEx, Action]
 
     We use ^ assertion for all regular expressions to only accept cases in which from index 0 and on satisifes the test case
-        - e.g "if " --> Will give a valid match to "/^if/"
+        - e.g "if " --> Will give a valid match to "/^if/" but " if" will not
 
     Priority Levels:
        - 0: Space/New Line or Undefined/Reserved Characters
@@ -18,7 +18,7 @@
 
 var _Grammar = [
     // Constructs
-    {priority: 1, name: "EOP",          regex: "/^\$/", action: 
+    {priority: 1,  name: "EOP",          regex: "/^\$/", action: 
         function(value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.foundEOP = true;}},
     { priority: 1, name: "L_BRACE",     regex: "/^{/", action:
         function(value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); }},
@@ -36,7 +36,7 @@ var _Grammar = [
         function(value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.inQuote = true || false ? false : true; }},
     { priority: 0, name: "BREAK",       regex: "/^\n/", action: 
         function() { _Lexer.line++; }},
-    { priority: 1, name: "UNDEFINED",   regex: "/^[A-Z]|[~`!@#%^&:;'-,.<>?/\|\/]/", action: 
+    { priority: 0, name: "UNDEFINED",   regex: "/^[A-Z]|[~`!@#%^&:;'-,.<>?/\|\/]/", action: 
         function(value) { _Lexer.emitError(value); }}, // TODO: Finsh Error handeling
 
     // Operators
