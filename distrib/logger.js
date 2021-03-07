@@ -1,20 +1,33 @@
 /* -----
     Logger.ts
 
-    The Logger is used to output all relative information throughout the compilation of a program.
+    The Logger is used to output all relative information to our User throughout the compilation of a program.
 
 ----- */
 var Compiler;
 (function (Compiler) {
     var Logger = /** @class */ (function () {
         function Logger(log, mode) {
-            if (log === void 0) { log = document.getElementById("log"); }
-            if (mode === void 0) { mode = "Verbose"; }
+            if (log === void 0) { log = document.getElementById("log-output"); }
+            if (mode === void 0) { mode = "verbose"; }
             this.log = log;
             this.mode = mode;
         }
         Logger.prototype.init = function () {
-            this.reset();
+            this.reset(); // Clear Log for New Compiler Process
+        };
+        /**
+         * input()
+         * - Input handles reading all data for a respective
+         *   compililation request. Breaksdown Source Data for
+         *   each seperate program contained in our Input Field.
+         */
+        Logger.prototype.input = function () {
+            // Get Input Textarea Refernece
+            var inputElement = document.getElementById("user-input");
+            // Collect Program(s) + Split
+            var sourceData = inputElement.value.split("$");
+            return sourceData;
         };
         /**
          * output(msg)
@@ -24,7 +37,7 @@ var Compiler;
          */
         Logger.prototype.output = function (msg) {
             // Determine Msg Type for Output Formatting
-            switch (msg.type) {
+            switch (msg.level) {
                 case "INFO":
                     this.log.value += "INFO " + msg.data;
                 case "DEBUG":
@@ -51,6 +64,13 @@ var Compiler;
                 default:
                     console.log("Log exception: Invalid Message Type");
             }
+        };
+        /**
+         * setMode(m)
+         * - Allows User to decide Log Level for Output.
+         */
+        Logger.prototype.setMode = function (m) {
+            this.mode = m; // Doesn't need to be validated due to hardcoded Param Given
         };
         /**
          * reset()

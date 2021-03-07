@@ -14,6 +14,10 @@
 
     <!-- Compiler Routines -->
     <script type="text/javascript" src="distrib/logger.js"></script>
+    <script type="text/javascript" src="distrib/grammar.js"></script>
+    <script type="text/javascript" src="distrib/compiler.js"></script>
+    <script type="text/javascript" src="distrib/lexer.js"></script>
+
 
     <!-- Other Routines -->
     <!-- TODO: Create GLaDOS Testing Functionality -->
@@ -85,14 +89,14 @@
                             </div>
                         </div>
                         <div class="input-container cell large-11">
-                            <textarea class="user-input"></textarea>
+                            <textarea class="user-input" id="user-input"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="cell large-6 medium-12 medium-order-2 space-left">
                 <div class="logger">
-                    <textarea class="log-output" id="log" readonly></textarea>
+                    <textarea class="log-output" id="log-output" readonly></textarea>
                 </div>
             </div>
         </div>

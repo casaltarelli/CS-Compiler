@@ -1,18 +1,34 @@
 /* -----
     Logger.ts
 
-    The Logger is used to output all relative information throughout the compilation of a program. 
+    The Logger is used to output all relative information to our User throughout the compilation of a program. 
 
 ----- */
 
     module Compiler {
         export class Logger {
             
-            constructor(public log = <HTMLTextAreaElement>document.getElementById("log"),
-                        public mode = "Verbose") {}
+            constructor(public log = <HTMLTextAreaElement>document.getElementById("log-output"),
+                        public mode = "verbose") {}
 
             public init(): void {
-                this.reset();
+                this.reset(); // Clear Log for New Compiler Process
+            }
+
+            /**
+             * input()
+             * - Input handles reading all data for a respective
+             *   compililation request. Breaksdown Source Data for
+             *   each seperate program contained in our Input Field. 
+             */
+            public input(): string[] {
+                // Get Input Textarea Refernece
+                var inputElement = <HTMLTextAreaElement>document.getElementById("user-input");
+
+                // Collect Program(s) + Split
+                var sourceData = inputElement.value.split("$");
+
+                return sourceData;
             }
 
             /**
@@ -23,7 +39,7 @@
              */
             public output(msg): void {
                 // Determine Msg Type for Output Formatting
-                switch(msg.type) {
+                switch(msg.level) {
                     case "INFO":
                         this.log.value += "INFO " + msg.data;
 
@@ -61,6 +77,14 @@
                         console.log("Log exception: Invalid Message Type");
                 }
 
+            }
+
+            /**
+             * setMode(m)
+             * - Allows User to decide Log Level for Output.
+             */
+            public setMode(m): void {
+                this.mode = m; // Doesn't need to be validated due to hardcoded Param Given
             }
 
             /**
