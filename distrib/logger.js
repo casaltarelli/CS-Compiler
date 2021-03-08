@@ -22,7 +22,7 @@ var CSCompiler;
          *   compililation request. Breaksdown Source Data for
          *   each seperate program contained in our Input Field.
          *
-         * (Not sure if this is the right place to handle this)
+         * (Not sure if this is the right place to handle this.)
          */
         Logger.prototype.input = function () {
             // Get Input Textarea Referenece
@@ -32,7 +32,7 @@ var CSCompiler;
                 // Reset Self for new Compilation Request
                 this.reset();
                 // Collect Program(s) + Split on End Marker
-                var sourceData = inputElement.value.trim().split(/(?<=[$])/g); // Use ?<=[] assertion to keep our $ delimeter
+                var sourceData = inputElement.value.split(/(?<=[$])/g); // Use ?<=[] assertion to keep our $ delimeter
                 return sourceData;
             }
             else {
@@ -54,17 +54,20 @@ var CSCompiler;
                     this.log.value += "INFO - " + msg.data + "\n";
                     break;
                 case "DEBUG":
-                    this.log.value += "DEBUG - " + _Stage +
-                        +" - " + msg.data.token.type
+                    this.log.value += "DEBUG - " + _Stage
+                        + " - " + msg.data.token.name
                         + " [ " + msg.data.token.value + " ] "
-                        + " at line: " + msg.data.token.loc.line
-                        + " col: " + msg.data.token.loc.col + "\n";
+                        + " at line: " + msg.data.loc.line
+                        + " col: " + msg.data.loc.col + "\n";
                     break;
                 case "WARN":
                     this.log.value += "WARN - " + _Stage + " - " + msg.data + "\n";
                     break;
                 case "ERROR":
                     this.log.value += "ERROR - " + _Stage + " - " + msg.data + "\n";
+                    break;
+                case "NONE":
+                    this.log.value += msg.data + "\n";
                     break;
                 default:
                     console.log("Log exception: Invalid Message Type");

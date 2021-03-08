@@ -17,31 +17,41 @@
 ----- */
 var _Grammar = [
     // Constructs
-    { priority: 1, name: "EOP", regex: "/^\$/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.foundEOP = true; } },
-    { priority: 1, name: "L_BRACE", regex: "/^{/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "R_BRACE", regex: "/^}/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "L_PARAN", regex: "/^(/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "R_PARAN", regex: "/^)/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "L_COMM", regex: "/^\/\/*/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.inComment = true; } },
-    { priority: 1, name: "R_COMM", regex: "/^\*\//", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.inComment = false; } },
-    { priority: 1, name: "QUOTE", regex: '/^"/', action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); _Lexer.inQuote = true || false ? false : true; } },
-    { priority: 0, name: "BREAK", regex: "/^\n/", action: function () { _Lexer.line++; } },
-    { priority: 0, name: "UNDEFINED", regex: "/^[A-Z]|[~`!@#%^&:;'-,.<>?/\|\/]/", action: function (value) { _Lexer.emitError(value); } },
+    { priority: 1, name: "EOP", regex: /^\$/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.foundEOP = true; } },
+    { priority: 1, name: "L_BRACE", regex: /^\{/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "R_BRACE", regex: /^\}/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "L_PARAN", regex: /^\(/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "R_PARAN", regex: /^\)/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "L_COMM", regex: /^\/\*/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = true; } },
+    { priority: 1, name: "R_COMM", regex: /^\\*\//, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = false; } },
+    { priority: 1, name: "QUOTE", regex: /^"/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = true || false ? false : true; } },
+    { priority: 0, name: "BREAK", regex: /^\n/, action: function (lexeme) { _Lexer.line++; _Lexer.col = 0; } },
+    { priority: 0, name: "UNDEFINED", regex: /^[A-Z]|[~`@#%^&:;'-,.<>?/\|\/]/, action: function (lexeme) { _Lexer.emitError(lexeme); } },
     // Operators
-    { priority: 2, name: "ASSIGN_OP", regex: "/^=/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "BOOL_OP", regex: "/^==|^!=/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "INT_OP", regex: "/^+/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
+    { priority: 2, name: "ASSIGN_OP", regex: /^=/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "BOOL_OP", regex: /^==|^!=/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "INT_OP", regex: /^\\+/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     // Statements
-    { priority: 1, name: "IF", regex: "/^if/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "WHILE", regex: "/^while/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "PRINT", regex: "/^print/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
+    { priority: 1, name: "IF", regex: /^if/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "WHILE", regex: /^while/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "PRINT", regex: /^print/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     // Data Types
-    { priority: 1, name: "INT", regex: "/^int/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "STRING", regex: "/^string/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "BOOLEAN", regex: "/^boolean/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
+    { priority: 1, name: "INT", regex: /^int/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "STRING", regex: /^string/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "BOOLEAN", regex: /^boolean/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     // Utilities
-    { priority: 2, name: "ID", regex: "/^[a-z]/", action: function (name, value) { _Lexer.emitToken(_Lexer.generateToken(name, value)); } },
-    { priority: 2, name: "DIGIT", regex: "/^[0-9]/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 1, name: "BOOL_VAL", regex: "/^true|^false/", action: function (value) { _Lexer.emitToken(_Lexer.generateToken(this.name, value)); } },
-    { priority: 0, name: "SPACE", regex: "/[^\S\n\r]/", action: function () { _Lexer.program = _Lexer.program.substring(1); } }
+    { priority: 2, name: "ID", regex: /^[a-z]/, action: function (lexeme) {
+            if (!(_Lexer.inComment && _Lexer.inQuote)) {
+                _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme));
+            }
+            else {
+                if (_Lexer.inQuote) {
+                    _Lexer.emitToken(_Lexer.generateToken("CHAR", lexeme));
+                }
+            }
+        } },
+    { priority: 2, name: "DIGIT", regex: /^[0-9]/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "BOOL_VAL", regex: /^true|^false/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 0, name: "SPACE", regex: /^\s/, action: function (lexeme) { } }
 ];
+// /[^\S\n\r]/

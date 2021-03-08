@@ -15,6 +15,8 @@ var _Stage = "Lexer"; // Preset to Lexer for first stage of Compilation
 var _PID = 1; // ID for Current Program
 // Compiler 
 var _Compiler;
+var _TokenStream = [];
+var _CurrentProgram;
 // Logger
 var _Log;
 // Lexer

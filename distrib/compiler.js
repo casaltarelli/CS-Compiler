@@ -23,10 +23,25 @@ var CSCompiler;
          *   to the various stages of our compilation.
          */
         Compiler.compile = function () {
-            // Get User Input
+            // Clear Log + Get Segmented User Input
+            _Log.reset();
             var source = _Log.input();
             // Validate Input from User
             if (source) {
+                // Iterate over all Programs
+                for (var program in source) {
+                    // Update Current Program
+                    _CurrentProgram = source[program];
+                    // Announce Compilation Start
+                    _Log.output({ level: "NONE", data: "--------------------" });
+                    _Log.output({ level: "INFO", data: "Compiling Program " + _PID });
+                    // Init Lexer for New Token Stream
+                    _Lexer.init(_CurrentProgram);
+                    // Get Token Stream
+                    _TokenStream.push(_Lexer.lex(program));
+                    // Validate 0 Errors
+                    _Log.output({ level: "INFO", data: "Lexical Analysis Complete! " + _PID });
+                }
             }
         };
         return Compiler;

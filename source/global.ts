@@ -18,6 +18,8 @@ var _PID = 1;           // ID for Current Program
 
 // Compiler 
 var _Compiler: CSCompiler.Compiler;
+var _TokenStream = [];
+var _CurrentProgram;
 
 // Logger
 var _Log: CSCompiler.Logger;
