@@ -76,12 +76,8 @@
                         this.log.value += "ERROR - " + _Stage + " - " + msg.data + "\n";
                         break;
 
-                    case "NONE":
-                        this.log.value += msg.data + "\n";
-                        break;
-
                     default: 
-                        console.log("Log exception: Invalid Message Type");
+                        this.log.value += msg.data + "\n";
                         break;
                 }
 

@@ -48,7 +48,7 @@ var CSCompiler;
             if (tokenStream === void 0) { tokenStream = []; }
             if (errors === void 0) { errors = []; }
             if (warnings === void 0) { warnings = []; }
-            if (line === void 0) { line = 0; }
+            if (line === void 0) { line = 1; }
             if (col === void 0) { col = 0; }
             if (inQuote === void 0) { inQuote = false; }
             if (inComment === void 0) { inComment = false; }
@@ -71,7 +71,7 @@ var CSCompiler;
             this.tokenStream = [];
             this.errors = [];
             this.warnings = [];
-            this.line = 0;
+            this.line = 1;
             this.col = 0;
             this.inQuote = false;
             this.inComment = false;
@@ -83,7 +83,8 @@ var CSCompiler;
          * - Lex handles scanning a given program to
          *   generate our TokenStream. Tests all programs
          *   against our defined Grammar List. Uses priority to
-         *   determine Rule Order for Longest Match.
+         *   determine Rule Order for Longest Match excluding
+         *   special cases.
          */
         Lexer.prototype.lex = function (priority) {
             return __awaiter(this, void 0, void 0, function () {
@@ -94,11 +95,25 @@ var CSCompiler;
                     if (this.foundEOP) { // [Base]
                         return [2 /*return*/, this.tokenStream];
                     }
-                    else { // Keep Searching for Tokens [General]
+                    else { // [General]
                         foundToken = false;
                         if (!(this.program === "")) {
                             cases = _Grammar.filter(function (regex) { return regex.priority == priority; });
                             console.log("CURRENT PRIORITY: " + priority);
+                            if (this.inQuote || this.inComment) { // [General-Special Cases]
+                                // Override Cases based on Special Case Type
+                                if (this.inQuote) {
+                                    // Get Subset RegEx for Quote
+                                    cases = _Grammar.filter(function (regex) {
+                                        return regex.priority == 0
+                                            || regex.name == "RESERVED" || regex.name == "ID" || regex.name == "QUOTE";
+                                    });
+                                }
+                                else if (this.inComment) {
+                                    // Get Subset RegEx for Comment
+                                    cases = _Grammar.filter(function (regex) { return regex.name == "R_COMM" || regex.name == "BREAK"; });
+                                }
+                            }
                             // Test Cases against Program String
                             out: for (i in cases) {
                                 // Create RegExp Object
@@ -107,28 +122,48 @@ var CSCompiler;
                                 if (current.test(this.program)) {
                                     lexeme = this.program.match(current);
                                     // Get Token Action
-                                    cases[i]['action'](lexeme);
+                                    cases[i]['action'](lexeme[0]);
                                     console.log("TOKEN FOUND - Name: " + cases[i].name);
-                                    // Update Program
+                                    // Update Flag
                                     foundToken = true;
                                     break out;
                                 }
                             }
-                            // Check if Hit Found
                             if (foundToken) {
-                                this.update(current);
+                                if (!(this.inComment)) {
+                                    this.update(current);
+                                }
                                 this.lex(0); // Reset Priority
                             }
                             else {
-                                foundToken = false;
-                                this.lex(priority + 1);
+                                if (this.inComment) {
+                                    this.update(/./);
+                                    this.lex(0);
+                                }
+                                else {
+                                    //foundToken = false;
+                                    if (priority < 3) {
+                                        this.lex(priority + 1);
+                                    }
+                                }
                             }
                         }
                         else {
-                            // Missing EOP Error
-                            console.log("Missing EOP!");
-                            // Add End of Program Marker
-                            _CurrentProgram = _CurrentProgram + "$";
+                            // Check for Special Cases
+                            if (this.inQuote || this.inComment) {
+                                if (this.inQuote) {
+                                    this.emitError("QUOTE", '"');
+                                }
+                                else {
+                                    this.emitError("COMMENT", "*/");
+                                }
+                            }
+                            else {
+                                // Missing EOP Error
+                                this.emitWarning("EOP", "$");
+                                // Add End of Program Marker for Current Program
+                                _CurrentProgram = _CurrentProgram + "$";
+                            }
                         }
                     }
                     return [2 /*return*/];
@@ -144,13 +179,18 @@ var CSCompiler;
          */
         Lexer.prototype.update = function (regex) {
             // Update Program based on match
-            var match = this.program.match(regex)[0].length;
-            this.program = this.program.substring(match);
+            var lexeme = this.program.match(regex)[0].length;
+            this.program = this.program.substring(lexeme);
             // Update Column Count based on Match Length
-            this.col = this.col + match;
+            this.col = this.col + lexeme;
         };
-        Lexer.prototype.seek = function () {
-        };
+        /**
+         * seek(): {found, token}
+         * - Seek allows for us to look-ahead for
+         *   an end marker (either R_COMM or QUOTE).
+         *   Returns results of search.
+         */
+        Lexer.prototype.seek = function () { };
         /**
          * generateToken(name, value): Token
          * - GenerateToken is used to create our Token
@@ -173,11 +213,68 @@ var CSCompiler;
             // Output to Log for Registered Token
             _Log.output({ level: "DEBUG", data: { token: token, loc: { line: token.line, col: token.col } } });
         };
-        Lexer.prototype.emitError = function (value) {
-            // Output Error to User
-            _Log.output({ level: "ERROR", data: "Undefined Token [ " + value + " ] on line " + this.line + "col " + this.col });
+        /**
+         * emitError(type, value)
+         * - EmitError handles the creation of our Error Entry and
+         *   our generating our message object for Log Output.
+         */
+        Lexer.prototype.emitError = function (type, value) {
+            var data;
+            // Format Message Date Based on Type
+            switch (type) {
+                case "UNDEFINED":
+                    if (this.inQuote) {
+                        data = "Invalid Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
+                    }
+                    else {
+                        data = "Unrecognized or Invalid Token [ " + value + " ] on line " + this.line + " col " + this.col;
+                    }
+                    break;
+                case "RESERVED":
+                    data = "Reserved Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
+                    break;
+                case "COMMENT":
+                    for (var i in this.tokenStream) {
+                        console.log("Token Stream Index [ " + i + " ]: " + this.tokenStream[i].name);
+                    }
+                    console.log("Index Calculated: " + ((this.tokenStream.length - 1) - this.tokenStream.reverse().map(function (token) { return token.name; }).indexOf("L_COMM")));
+                    // Get Right Most Occurance of L_COMM
+                    // var start = this.tokenStream[this.tokenStream.length - this.tokenStream.reverse().findIndex((regex) =>  regex.name == "L_COMM")];
+                    var start = this.tokenStream[(this.tokenStream.length - 1) - this.tokenStream.reverse().map(function (token) { return token.name; }).indexOf("L_COMM")];
+                    data = "Missing end comment brace [ " + value + " ] for comment starting on line " + start.line + " col " + start.col;
+                    break;
+                case "QUOTE":
+                    // Get Right Most Occurance of QUOTE
+                    var start = this.tokenStream[(this.tokenStream.length - 1) - this.tokenStream.reverse().map(function (token) { return token.name; }).indexOf("QUOTE")];
+                    data = "Missing end quote marker [ " + value + " ] for quote starting on line " + start.line + " col " + start.col;
+                    break;
+                default:
+                    break;
+            }
+            // Update Error List + Output to User
+            this.errors.push({ type: type, value: value, line: this.line, col: this.col });
+            _Log.output({ level: "ERROR", data: data });
+            // Update found EOP Flag to End Lexing
+            this.foundEOP = true;
         };
-        Lexer.prototype.emitWarning = function () {
+        /**
+         * emitWarning(type, value)
+         * - EmitWarning handles the creation of our Warning Entry
+         *   and generating our message object for Log Output.
+         */
+        Lexer.prototype.emitWarning = function (type, value) {
+            var data;
+            // Format Message Date Based on Type
+            switch (type) {
+                case "EOP":
+                    data = "No EOP [ " + value + " ] detected at end-of-file. Adding to end-of-file...";
+                    break;
+                default:
+                    break;
+            }
+            // Update Error List + Output to User
+            this.warnings.push({ type: type, value: value, line: this.line, col: this.col });
+            _Log.output({ level: "WARN", data: data });
         };
         return Lexer;
     }());

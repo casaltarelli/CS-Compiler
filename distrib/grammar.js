@@ -23,14 +23,17 @@ var _Grammar = [
     { priority: 1, name: "L_PARAN", regex: /^\(/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "R_PARAN", regex: /^\)/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "L_COMM", regex: /^\/\*/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = true; } },
-    { priority: 1, name: "R_COMM", regex: /^\\*\//, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = false; } },
-    { priority: 1, name: "QUOTE", regex: /^"/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = true || false ? false : true; } },
-    { priority: 0, name: "BREAK", regex: /^\n/, action: function (lexeme) { _Lexer.line++; _Lexer.col = 0; } },
-    { priority: 0, name: "UNDEFINED", regex: /^[A-Z]|[~`@#%^&:;'-,.<>?/\|\/]/, action: function (lexeme) { _Lexer.emitError(lexeme); } },
+    { priority: 1, name: "R_COMM", regex: /^\*\//, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = false; } },
+    { priority: 1, name: "QUOTE", regex: /^"/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = _Lexer.inQuote ? false : true; console.log("IN QUOTE!"); } },
+    { priority: 0, name: "BREAK", regex: /^\n/, action: function (lexeme) { if (_Lexer.inComment || _Lexer.inQuote) {
+            _Lexer.update(this.regex);
+        } _Lexer.line++; _Lexer.col = 0; } },
+    { priority: 0, name: "UNDEFINED", regex: /^([A-Z]|[\~\`\@\#\%\^\&\:\;\'\-\,\.\<\>\?\|])/, action: function (lexeme) { _Lexer.emitError(this.name, lexeme); } },
+    { priority: 4, name: "RESERVED", regex: /^[{}!=+()\/]/, action: function (lexeme) { _Lexer.emitError(this.name, lexeme); } },
     // Operators
     { priority: 2, name: "ASSIGN_OP", regex: /^=/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "BOOL_OP", regex: /^==|^!=/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
-    { priority: 1, name: "INT_OP", regex: /^\\+/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
+    { priority: 1, name: "INT_OP", regex: /^\+/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     // Statements
     { priority: 1, name: "IF", regex: /^if/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "WHILE", regex: /^while/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
@@ -41,17 +44,16 @@ var _Grammar = [
     { priority: 1, name: "BOOLEAN", regex: /^boolean/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     // Utilities
     { priority: 2, name: "ID", regex: /^[a-z]/, action: function (lexeme) {
-            if (!(_Lexer.inComment && _Lexer.inQuote)) {
-                _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme));
+            if (_Lexer.inQuote) {
+                _Lexer.emitToken(_Lexer.generateToken("CHAR", lexeme));
             }
             else {
-                if (_Lexer.inQuote) {
-                    _Lexer.emitToken(_Lexer.generateToken("CHAR", lexeme));
-                }
+                _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme));
             }
         } },
     { priority: 2, name: "DIGIT", regex: /^[0-9]/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "BOOL_VAL", regex: /^true|^false/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
-    { priority: 0, name: "SPACE", regex: /^\s/, action: function (lexeme) { } }
+    { priority: 0, name: "SPACE", regex: /^\s/, action: function (lexeme) { if (_Lexer.inQuote) {
+            _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme));
+        } } }
 ];
-// /[^\S\n\r]/

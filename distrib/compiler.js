@@ -13,7 +13,7 @@ var CSCompiler;
         Compiler.prototype.init = function () {
             // Initalize our Log
             _Log = new CSCompiler.Logger();
-            // Initalize Stages
+            // Initalize Compilaton Stages
             _Lexer = new CSCompiler.Lexer();
         };
         /**
@@ -28,19 +28,30 @@ var CSCompiler;
             var source = _Log.input();
             // Validate Input from User
             if (source) {
+                // Reset PID for new compilation
+                _PID = 0;
                 // Iterate over all Programs
                 for (var program in source) {
                     // Update Current Program
                     _CurrentProgram = source[program];
                     // Announce Compilation Start
-                    _Log.output({ level: "NONE", data: "--------------------" });
-                    _Log.output({ level: "INFO", data: "Compiling Program " + _PID });
+                    _Log.output({ level: "", data: "--------------------" });
+                    _Log.output({ level: "", data: "Compiling Program " + _PID + "\n" });
                     // Init Lexer for New Token Stream
                     _Lexer.init(_CurrentProgram);
                     // Get Token Stream
-                    _TokenStream.push(_Lexer.lex(program));
-                    // Validate 0 Errors
-                    _Log.output({ level: "INFO", data: "Lexical Analysis Complete! " + _PID });
+                    _TokenStream.push(_Lexer.lex(0));
+                    // Output Lexer Results + Check for Errors
+                    _Log.output({ level: "INFO", data: "Lexical Analysis Complete. " + _Lexer.warnings.length + " WARNING(S) and "
+                            + _Lexer.errors.length + " ERROR(S)" });
+                    if (_Lexer.errors.length > 0) {
+                        _Log.output({ level: "", data: "\n--------------------" });
+                        _Log.output({ level: "INFO", data: "Compliation Stopped due to Lexer errors..." });
+                    }
+                    else {
+                        // Increment PID
+                        _PID++;
+                    }
                 }
             }
         };
