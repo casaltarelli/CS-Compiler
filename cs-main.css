@@ -307,6 +307,10 @@ body {
     color: #38B000;
 }
 
+.test-list li span.warning {
+    color: #FFBB5C;
+}
+
 .test-list li span.fail {
     color: #DB3A34;
 }

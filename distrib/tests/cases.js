@@ -12,13 +12,15 @@ var _SetTest = function (index, name) {
         '/* There might be a quote\n  coming soon*/\n{ int a "this is a quote " \n}$',
         "{ a boolean bca = true\n$\n\n{ string }$\n {}$",
         "{ /* this test \n\n is meant to be very long. \n*/ boolean\n a\n int string \n}\n$",
+        "{ boolean compilersarefun != false ()",
+        '{ int "i think this is a string ',
+        '{ string a != /* this is a comment ',
         "{\n int @\n }$",
-        '{ string\n c\n     "is bad {"\n}$',
-        "{ boolean compilersarefun != false ()"
+        '{ string\n c\n     "is bad {"\n}$'
     ];
     // Populate Editor + Output to Log
     this.document.getElementById("user-input").value = cases[index];
-    _Log.output({ level: "NONE", data: "Inserted Program " + name + "..." });
+    _Log.output({ level: "", data: "Inserted Program " + name + "..." });
     // Close Modal on User Choice
     closeModal();
 };

@@ -117,9 +117,9 @@ module CSCompiler {
                     // Check for Special Cases
                     if (this.inQuote || this.inComment) {
                         if (this.inQuote) {
-                            this.emitError("QUOTE", '"');
+                            this.emitWarning("QUOTE", '"');
                         } else {
-                            this.emitError("COMMENT", "*/");
+                            this.emitWarning("COMMENT", "*/");
                         }
                     } else {
                         // Missing EOP Error
@@ -144,19 +144,9 @@ module CSCompiler {
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
 
-            console.log("Match Length Calculated: " + lexeme);
-
             // Update Column Count based on Match Length
-            this.col = this.col + lexeme;
+            this.col = this.col + lexeme;  
         }
-
-        /**
-         * seek(): {found, token}
-         * - Seek allows for us to look-ahead for 
-         *   an end marker (either R_COMM or QUOTE).
-         *   Returns results of search.
-         */
-        public seek() {}
 
         /**
          * generateToken(name, value): Token
@@ -164,7 +154,6 @@ module CSCompiler {
          *   object for a lexeme. 
          */
         public generateToken(name, value): Token {
-            console.log("TOKEN CREATED");
             // Create Token Object
             return new Token(name, value, this.line, this.col);    
         }
@@ -204,26 +193,6 @@ module CSCompiler {
                     data = "Reserved Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
                     break;
 
-                case "COMMENT":
-                    for (var i in this.tokenStream) {
-                        console.log("Token Stream Index [ " + i +" ]: " + this.tokenStream[i].name);
-                    }
-
-                    console.log("Index Calculated: " + ((this.tokenStream.length - 1) - this.tokenStream.reverse().map(token => token.name).indexOf("L_COMM")));
-
-
-                    // Get Right Most Occurance of L_COMM
-                    // var start = this.tokenStream[this.tokenStream.length - this.tokenStream.reverse().findIndex((regex) =>  regex.name == "L_COMM")];
-                    var start = this.tokenStream[(this.tokenStream.length - 1) - this.tokenStream.reverse().map(token => token.name).indexOf("L_COMM")];
-                    data = "Missing end comment brace [ " + value + " ] for comment starting on line " + start.line + " col " + start.col;
-                    break;
-
-                case "QUOTE":
-                    // Get Right Most Occurance of QUOTE
-                    var start = this.tokenStream[(this.tokenStream.length - 1) - this.tokenStream.reverse().map(token => token.name).indexOf("QUOTE")];
-                    data = "Missing end quote marker [ " + value + " ] for quote starting on line " + start.line + " col " + start.col;
-                    break;
-
                 default:
                     break;
             }
@@ -248,6 +217,18 @@ module CSCompiler {
             switch(type) {    
                 case "EOP":
                     data = "No EOP [ " + value + " ] detected at end-of-file. Adding to end-of-file...";
+                    break;
+
+                case "COMMENT":
+                    // Get Right Most Occurance of L_COMM
+                    var start = this.tokenStream[this.tokenStream.map(regex => regex.name === "L_COMM").lastIndexOf(true)];
+                    data = "Missing end comment brace [ " + value + " ] for comment starting on line " + start.line + " col " + start.col;
+                    break;
+
+                case "QUOTE":
+                    // Get Right Most Occurance of QUOTE
+                    var start = this.tokenStream[this.tokenStream.map(regex => regex.name === type).lastIndexOf(true)];
+                    data = "Missing end quote marker [ " + value + " ] for quote starting on line " + start.line + " col " + start.col;
                     break;
 
                 default:

@@ -152,10 +152,10 @@ var CSCompiler;
                             // Check for Special Cases
                             if (this.inQuote || this.inComment) {
                                 if (this.inQuote) {
-                                    this.emitError("QUOTE", '"');
+                                    this.emitWarning("QUOTE", '"');
                                 }
                                 else {
-                                    this.emitError("COMMENT", "*/");
+                                    this.emitWarning("COMMENT", "*/");
                                 }
                             }
                             else {
@@ -181,24 +181,15 @@ var CSCompiler;
             // Update Program based on match
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
-            console.log("Match Length Calculated: " + lexeme);
             // Update Column Count based on Match Length
             this.col = this.col + lexeme;
         };
-        /**
-         * seek(): {found, token}
-         * - Seek allows for us to look-ahead for
-         *   an end marker (either R_COMM or QUOTE).
-         *   Returns results of search.
-         */
-        Lexer.prototype.seek = function () { };
         /**
          * generateToken(name, value): Token
          * - GenerateToken is used to create our Token
          *   object for a lexeme.
          */
         Lexer.prototype.generateToken = function (name, value) {
-            console.log("TOKEN CREATED");
             // Create Token Object
             return new CSCompiler.Token(name, value, this.line, this.col);
         };
@@ -234,21 +225,6 @@ var CSCompiler;
                 case "RESERVED":
                     data = "Reserved Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
                     break;
-                case "COMMENT":
-                    for (var i in this.tokenStream) {
-                        console.log("Token Stream Index [ " + i + " ]: " + this.tokenStream[i].name);
-                    }
-                    console.log("Index Calculated: " + ((this.tokenStream.length - 1) - this.tokenStream.reverse().map(function (token) { return token.name; }).indexOf("L_COMM")));
-                    // Get Right Most Occurance of L_COMM
-                    // var start = this.tokenStream[this.tokenStream.length - this.tokenStream.reverse().findIndex((regex) =>  regex.name == "L_COMM")];
-                    var start = this.tokenStream[(this.tokenStream.length - 1) - this.tokenStream.reverse().map(function (token) { return token.name; }).indexOf("L_COMM")];
-                    data = "Missing end comment brace [ " + value + " ] for comment starting on line " + start.line + " col " + start.col;
-                    break;
-                case "QUOTE":
-                    // Get Right Most Occurance of QUOTE
-                    var start = this.tokenStream[(this.tokenStream.length - 1) - this.tokenStream.reverse().map(function (token) { return token.name; }).indexOf("QUOTE")];
-                    data = "Missing end quote marker [ " + value + " ] for quote starting on line " + start.line + " col " + start.col;
-                    break;
                 default:
                     break;
             }
@@ -269,6 +245,16 @@ var CSCompiler;
             switch (type) {
                 case "EOP":
                     data = "No EOP [ " + value + " ] detected at end-of-file. Adding to end-of-file...";
+                    break;
+                case "COMMENT":
+                    // Get Right Most Occurance of L_COMM
+                    var start = this.tokenStream[this.tokenStream.map(function (regex) { return regex.name === "L_COMM"; }).lastIndexOf(true)];
+                    data = "Missing end comment brace [ " + value + " ] for comment starting on line " + start.line + " col " + start.col;
+                    break;
+                case "QUOTE":
+                    // Get Right Most Occurance of QUOTE
+                    var start = this.tokenStream[this.tokenStream.map(function (regex) { return regex.name === type; }).lastIndexOf(true)];
+                    data = "Missing end quote marker [ " + value + " ] for quote starting on line " + start.line + " col " + start.col;
                     break;
                 default:
                     break;
