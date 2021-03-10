@@ -90,8 +90,6 @@ var CSCompiler;
             return __awaiter(this, void 0, void 0, function () {
                 var current, foundToken, cases, i, lexeme;
                 return __generator(this, function (_a) {
-                    console.log("-----------------");
-                    console.log("CURRENT PROGRAM STRING:\n" + this.program);
                     if (this.foundEOP) { // [Base]
                         return [2 /*return*/, this.tokenStream];
                     }
@@ -99,7 +97,6 @@ var CSCompiler;
                         foundToken = false;
                         if (!(this.program === "")) {
                             cases = _Grammar.filter(function (regex) { return regex.priority == priority; });
-                            console.log("CURRENT PRIORITY: " + priority);
                             if (this.inQuote || this.inComment) { // [General-Special Cases]
                                 // Override Cases based on Special Case Type
                                 if (this.inQuote) {
@@ -118,12 +115,10 @@ var CSCompiler;
                             out: for (i in cases) {
                                 // Create RegExp Object
                                 current = new RegExp(cases[i].regex);
-                                console.log("CURRENT REGEX: " + cases[i].regex);
                                 if (current.test(this.program)) {
                                     lexeme = this.program.match(current);
                                     // Get Token Action
                                     cases[i]['action'](lexeme[0]);
-                                    console.log("TOKEN FOUND - Name: " + cases[i].name);
                                     // Update Flag
                                     foundToken = true;
                                     break out;

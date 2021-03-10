@@ -47,8 +47,6 @@
 
                     return null;
                 }
-
-                
             }
 
             /**
@@ -87,7 +85,6 @@
 
                 // Automatically Scroll to Bottom if overflow
                 this.log.scrollTop = this.log.scrollHeight;
-
             }
 
             /**

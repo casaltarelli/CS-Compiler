@@ -43,8 +43,6 @@ module CSCompiler {
          *   special cases.
          */
         public async lex(priority) {
-            console.log("-----------------");
-            console.log("CURRENT PROGRAM STRING:\n" + this.program);
             var current;
 
             if (this.foundEOP) {  // [Base]
@@ -56,8 +54,6 @@ module CSCompiler {
                 if (!(this.program === "")) {
                     // Get RegEx Cases Matching Priority
                     var cases = _Grammar.filter((regex) => { return regex.priority == priority});
-
-                    console.log("CURRENT PRIORITY: " + priority);
 
                     if (this.inQuote || this.inComment) { // [General-Special Cases]
                         // Override Cases based on Special Case Type
@@ -77,7 +73,6 @@ module CSCompiler {
                     for (var i in cases) {
                         // Create RegExp Object
                         current = new RegExp(cases[i].regex);
-                        console.log("CURRENT REGEX: " + cases[i].regex);
 
                         if (current.test(this.program)) {
                             // Get Lexeme for Match
@@ -85,8 +80,6 @@ module CSCompiler {
 
                             // Get Token Action
                             cases[i]['action'](lexeme[0]);
-
-                            console.log("TOKEN FOUND - Name: " + cases[i].name);
 
                             // Update Flag
                             foundToken = true; 
@@ -99,7 +92,6 @@ module CSCompiler {
                             this.update(current);
                         }
 
-                        
                         this.lex(0); // Reset Priority
                     } else {
                         if (this.inComment) {
