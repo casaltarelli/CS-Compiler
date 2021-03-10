@@ -44,7 +44,7 @@ module CSCompiler {
          */
         public async lex(priority) {
             console.log("-----------------");
-            console.log("CURRENT PROGRAM STRING: " + this.program);
+            console.log("CURRENT PROGRAM STRING:\n" + this.program);
             var current;
 
             if (this.foundEOP) {  // [Base]
@@ -98,6 +98,7 @@ module CSCompiler {
                         if (!(this.inComment)) {
                             this.update(current);
                         }
+
                         
                         this.lex(0); // Reset Priority
                     } else {
@@ -142,6 +143,8 @@ module CSCompiler {
             // Update Program based on match
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
+
+            console.log("Match Length Calculated: " + lexeme);
 
             // Update Column Count based on Match Length
             this.col = this.col + lexeme;

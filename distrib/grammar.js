@@ -24,12 +24,12 @@ var _Grammar = [
     { priority: 1, name: "R_PARAN", regex: /^\)/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "L_COMM", regex: /^\/\*/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = true; } },
     { priority: 1, name: "R_COMM", regex: /^\*\//, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = false; } },
-    { priority: 1, name: "QUOTE", regex: /^"/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = _Lexer.inQuote ? false : true; console.log("IN QUOTE!"); } },
-    { priority: 0, name: "BREAK", regex: /^\n/, action: function (lexeme) { if (_Lexer.inComment || _Lexer.inQuote) {
-            _Lexer.update(this.regex);
+    { priority: 1, name: "QUOTE", regex: /^"/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = _Lexer.inQuote ? false : true; console.log("Quote: " + _Lexer.inQuote); } },
+    { priority: 0, name: "BREAK", regex: /^\n/, action: function (lexeme) { if (_Lexer.inComment) {
+            _Lexer.update(lexeme);
         } _Lexer.line++; _Lexer.col = 0; } },
     { priority: 0, name: "UNDEFINED", regex: /^([A-Z]|[\~\`\@\#\%\^\&\:\;\'\-\,\.\<\>\?\|])/, action: function (lexeme) { _Lexer.emitError(this.name, lexeme); } },
-    { priority: 4, name: "RESERVED", regex: /^[{}!=+()\/]/, action: function (lexeme) { _Lexer.emitError(this.name, lexeme); } },
+    { priority: 4, name: "RESERVED", regex: /^([0-9]|[{}!=+()\/])/, action: function (lexeme) { _Lexer.emitError(this.name, lexeme); } },
     // Operators
     { priority: 2, name: "ASSIGN_OP", regex: /^=/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "BOOL_OP", regex: /^==|^!=/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
@@ -57,3 +57,4 @@ var _Grammar = [
             _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme));
         } } }
 ];
+// if (_Lexer.inComment || _Lexer.inQuote) { _Lexer.update(this.regex)}

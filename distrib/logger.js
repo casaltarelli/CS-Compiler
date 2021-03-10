@@ -33,6 +33,9 @@ var CSCompiler;
                 this.reset();
                 // Collect Program(s) + Split on End Marker
                 var sourceData = inputElement.value.split(/(?<=[$])/g); // Use ?<=[] assertion to keep our $ delimeter
+                for (var i in sourceData) {
+                    console.log("[" + sourceData[i] + "]");
+                }
                 return sourceData;
             }
             else {
@@ -70,6 +73,8 @@ var CSCompiler;
                     this.log.value += msg.data + "\n";
                     break;
             }
+            // Automatically Scroll to Bottom if overflow
+            this.log.scrollTop = this.log.scrollHeight;
         };
         /**
          * setMode(m)

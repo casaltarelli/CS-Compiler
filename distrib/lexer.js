@@ -91,7 +91,7 @@ var CSCompiler;
                 var current, foundToken, cases, i, lexeme;
                 return __generator(this, function (_a) {
                     console.log("-----------------");
-                    console.log("CURRENT PROGRAM STRING: " + this.program);
+                    console.log("CURRENT PROGRAM STRING:\n" + this.program);
                     if (this.foundEOP) { // [Base]
                         return [2 /*return*/, this.tokenStream];
                     }
@@ -181,6 +181,7 @@ var CSCompiler;
             // Update Program based on match
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
+            console.log("Match Length Calculated: " + lexeme);
             // Update Column Count based on Match Length
             this.col = this.col + lexeme;
         };

@@ -32,7 +32,7 @@ module CSCompiler {
             // Validate Input from User
             if (source) {
                 // Reset PID for new compilation
-                _PID = 0;
+                _PID = 1;
 
                 // Iterate over all Programs
                 for (var program in source) {
@@ -61,6 +61,9 @@ module CSCompiler {
                         _PID++;
                     }
                 }
+
+                _Log.output({level: "", data: "\n--------------------"});
+                _Log.output({level: "INFO", data: "Completion of Program(s) completed."});
             }
         }
     }
