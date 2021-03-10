@@ -124,7 +124,7 @@ var CSCompiler;
                                 }
                             }
                             if (foundToken) {
-                                if (!(this.inComment)) {
+                                if (!(this.inComment) && current.toString() != /^\n/) {
                                     this.update(current);
                                 }
                                 this.lex(0); // Reset Priority
@@ -171,12 +171,21 @@ var CSCompiler;
          *   removing any identified tokens as well as our
          *   line and char attributes for accurate location.
          */
-        Lexer.prototype.update = function (regex) {
+        Lexer.prototype.update = function (regex, flag) {
+            console.log("-------");
+            console.log("CURRENT PROGRAM BEFORE UPDATE:\n" + this.program);
+            console.log("\nCURRENT REGEX: " + regex);
             // Update Program based on match
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
+            console.log("CURRENT PROGRAM AFTER UPDATE:\n" + this.program);
             // Update Column Count based on Match Length
-            this.col = this.col + lexeme;
+            if (!(flag)) { // Flag for BREAK TOKEN
+                this.col = this.col + lexeme;
+            }
+            else {
+                this.col = 0;
+            }
         };
         /**
          * generateToken(name, value): Token

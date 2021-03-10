@@ -35,7 +35,7 @@ var _Grammar = [
     { priority: 1, name: "QUOTE",       regex: /^"/, action:
         function(lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = _Lexer.inQuote ? false : true; }},
     { priority: 0, name: "BREAK",       regex: /^\n/, action: 
-        function(lexeme) { if (_Lexer.inComment || _Lexer.inQuote) { _Lexer.update(this.regex)} _Lexer.line++; _Lexer.col = 0; }},
+        function(lexeme) { _Lexer.update(this.regex, true); _Lexer.line++; _Lexer.col = 0; }},
     { priority: 0, name: "UNDEFINED",   regex: /^([A-Z]|[\~\`\@\#\%\^\&\:\;\'\-\,\.\<\>\?\|])/, action: 
         function(lexeme) { _Lexer.emitError(this.name, lexeme); }},
     { priority: 4, name: "RESERVED",   regex: /^([0-9]|[{}!=+()\/])/, action: 
@@ -80,3 +80,5 @@ var _Grammar = [
     { priority: 0,  name: "SPACE",      regex: /^\s/, action: 
         function(lexeme) { if (_Lexer.inQuote) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme))}}}
 ];
+
+// if (_Lexer.inComment || _Lexer.inQuote) { _Lexer.update(this.regex)}
