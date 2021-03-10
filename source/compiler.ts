@@ -13,9 +13,6 @@ module CSCompiler {
         init(): void {
             // Initalize our Log
             _Log = new Logger();
-
-            // Initalize Compilaton Stages
-            _Lexer = new Lexer();
         }
 
         /**
@@ -28,6 +25,9 @@ module CSCompiler {
             // Clear Log + Get Segmented User Input
             _Log.reset();
             var source = _Log.input(); 
+
+            // Initalize Compilation Stages
+            _Lexer = new Lexer();
 
             // Validate Input from User
             if (source) {
@@ -51,10 +51,10 @@ module CSCompiler {
 
                     // Output Lexer Results + Check for Errors
                     _Log.output({level: "INFO", data: "Lexical Analysis Complete. " + _Lexer.warnings.length + " WARNING(S) and " 
-                        + _Lexer.errors.length + " ERROR(S)"});
+                        + _Lexer.errors.length + " ERROR(S)\n"});
 
                     if (_Lexer.errors.length > 0) {
-                        _Log.output({level: "", data: "\n--------------------"});
+                        _Log.output({level: "", data: "--------------------"});
                         _Log.output({level: "INFO", data: "Compliation Stopped due to Lexer errors..."});
                     } else {
                         // Increment PID
@@ -62,7 +62,7 @@ module CSCompiler {
                     }
                 }
 
-                _Log.output({level: "", data: "\n--------------------"});
+                _Log.output({level: "", data: "--------------------"});
                 _Log.output({level: "INFO", data: "Completion of Program(s) completed."});
             }
         }

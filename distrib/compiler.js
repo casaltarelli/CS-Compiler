@@ -13,8 +13,6 @@ var CSCompiler;
         Compiler.prototype.init = function () {
             // Initalize our Log
             _Log = new CSCompiler.Logger();
-            // Initalize Compilaton Stages
-            _Lexer = new CSCompiler.Lexer();
         };
         /**
          * compile()
@@ -26,6 +24,8 @@ var CSCompiler;
             // Clear Log + Get Segmented User Input
             _Log.reset();
             var source = _Log.input();
+            // Initalize Compilation Stages
+            _Lexer = new CSCompiler.Lexer();
             // Validate Input from User
             if (source) {
                 // Reset PID for new compilation
@@ -43,9 +43,9 @@ var CSCompiler;
                     _TokenStream.push(_Lexer.lex(0));
                     // Output Lexer Results + Check for Errors
                     _Log.output({ level: "INFO", data: "Lexical Analysis Complete. " + _Lexer.warnings.length + " WARNING(S) and "
-                            + _Lexer.errors.length + " ERROR(S)" });
+                            + _Lexer.errors.length + " ERROR(S)\n" });
                     if (_Lexer.errors.length > 0) {
-                        _Log.output({ level: "", data: "\n--------------------" });
+                        _Log.output({ level: "", data: "--------------------" });
                         _Log.output({ level: "INFO", data: "Compliation Stopped due to Lexer errors..." });
                     }
                     else {
@@ -53,7 +53,7 @@ var CSCompiler;
                         _PID++;
                     }
                 }
-                _Log.output({ level: "", data: "\n--------------------" });
+                _Log.output({ level: "", data: "--------------------" });
                 _Log.output({ level: "INFO", data: "Completion of Program(s) completed." });
             }
         };

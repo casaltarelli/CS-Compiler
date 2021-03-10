@@ -71,7 +71,6 @@ var CSCompiler;
             this.tokenStream = [];
             this.errors = [];
             this.warnings = [];
-            this.line = 1;
             this.col = 0;
             this.inQuote = false;
             this.inComment = false;
