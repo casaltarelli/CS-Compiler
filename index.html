@@ -10,16 +10,22 @@
     </title>
 
     <!-- Global CONSTANTS and _Variables. Must be included first. -->
-    <!-- TODO: Create Global.js File in Source -->
+    <script type="text/javascript" src="distrib/global.js"></script>
 
     <!-- Compiler Routines -->
-    <!-- TODO: Create Lexer Routine -->
+    <script type="text/javascript" src="distrib/logger.js"></script>
+    <script type="text/javascript" src="distrib/grammar.js"></script>
+    <script type="text/javascript" src="distrib/compiler.js"></script>
+    <script type="text/javascript" src="distrib/lexer.js"></script>
+    <script type="text/javascript" src="distrib/token.js"></script>
+
 
     <!-- Other Routines -->
-    <!-- TODO: Create GLaDOS Testing Functionality -->
+    <script type="text/javascript" src="distrib/tests/cases.js"></script>
+    <script type="text/javascript" src="distrib/util.js"></script>
 </head>
 
-<body>
+<body onload="onDocumentLoad()">
     <section class="main-nav">
         <div class="grid-container">
             <div class="cell large-12">
@@ -28,19 +34,63 @@
             </div>
             <div class="cell large-12">
                <div class="main-menu">
-                   <input type="button"
-                          id = "btnCompile"
+                    <input type="button"
+                          id = "btn-tests"
+                          class="menu-button"
+                          value="&#8681"
+                          tabindex="0"
+                          onclick="openModal()">
+
+                    <!-- Modal Overlay -->
+                    <div class="modal-overlay" id="modal-overlay-">
+                        <div class="modal" id="modal-">
+                            <a class="modal-close" id="modal-close-" onclick="closeModal()">
+                                <svg viewbox="0 0 20 20">
+                                  <path fill="#000000" d="M15.898,4.045c-0.271-0.272-0.713-0.272-0.986,
+                                  0l-4.71,4.711L5.493,4.045c-0.272-0.272-0.714-0.272-0.986,0s-0.272,0.714,0,
+                                  0.986l4.709,4.711l-4.71,4.711c-0.272,0.271-0.272,0.713,0,0.986c0.136,0.136,
+                                  0.314,0.203,0.492,0.203c0.179,0,0.357-0.067,0.493-0.203l4.711-4.711l4.71,
+                                  4.711c0.137,0.136,0.314,0.203,0.494,0.203c0.178,0,0.355-0.067,0.492-0.203c0.273-0.273,0.273-0.715,
+                                  0-0.986l-4.711-4.711l4.711-4.711C16.172,4.759,16.172,4.317,15.898,4.045z"></path>
+                                </svg>
+                              </a><!-- close modal -->
+
+                              <div class="modal-tests-content" id="modal-tests-content-">
+                                <h4 class="section-name">TEST CASES</h4>
+                                <p>Click any of the test cases below.</p>
+                                <div class="test-list-container">
+                                    <ul class="test-list">
+                                        <li><a onclick="_SetTest(0, 'Alans Test')"><span class="success">&#10003 </span>Alan's Test</a></li>
+                                        <li><a onclick="_SetTest(1, 'Comment Test')"><span class="success">&#10003 </span>Comment Test</a></li>
+                                        <li><a onclick="_SetTest(2, 'Quote Test')"><span class="success">&#10003 </span>Quote Test</a></li>
+                                        <li><a onclick="_SetTest(3, 'Multiple Programs Test')"><span class="success">&#10003 </span>Multiple Programs Test</a></li>
+                                        <li><a onclick="_SetTest(4, 'Long Test')"><span class="success">&#10003 </span>Long Test</a></li>
+                                        <li><a onclick="_SetTest(5, 'Missing EOP Test')"><span class="warning">/ </span>Missing EOP Test</a></li>
+                                        <li><a onclick="_SetTest(6, 'Missing Quote Test')"><span class="warning">/ </span>Missing Quote Test</a></li>
+                                        <li><a onclick="_SetTest(7, 'Missing Comment Test')"><span class="warning">/ </span>Missing Comment Test</a></li>
+                                        <li><a onclick="_SetTest(8, 'Illegal Character Test')"><span class="fail">X </span>Illegal Character Test</a></li>
+                                        <li><a onclick="_SetTest(9, 'Reserved Character Test')"><span class="fail">X </span>Reserved Character Test</a></li>
+                                    </ul>
+                                </div>
+                            </div> <!-- Modal Tests Content -->
+
+                        </div>
+                    </div>
+                
+                    <input type="button"
+                          id = "btn-compile"
                           class="menu-button"
                           value="COMPILE"
-                          tabindex="0"
-                          onclick="">
+                          tabindex="1"
+                          onclick="CSCompiler.Compiler.compile();">
                </div>
             </div>
         </div>
     </section>
     <section class="compiler">
         <div class="grid-x grid-container">
-            <div class="cell large-6 medium-12 medium-order-1 space-right">
+            <div class="cell large-6 medium-12 medium-order-1">
+                <h4 class="section-name">EDITOR</h4>
                 <div class="editor">
                     <div class="grid-x">
                         <div class="lines cell large-1">
@@ -73,18 +123,43 @@
                             </div>
                         </div>
                         <div class="input-container cell large-11">
-                            <textarea class="user-input"></textarea>
+                            <textarea class="user-input" id="user-input"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="cell large-6 medium-12 medium-order-2 space-left">
-                <div class="logger">
-                    <textarea class="log-output" readonly></textarea>
+            <div class="cell large-6 medium-12 medium-order-2">
+                <h4 class="section-name push-left">LOG</h4>
+                <div class="logger" id="log-container">
+                    <div class="grid-x">
+                        <div class="cell large-12">
+                            <textarea class="log-output" id="log-output" readonly></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </section>
 
+    <section class="footer">
+        <div class="grid-container">
+            <div class="cell large-12">
+                <div class="grid-x align-middle">
+                    <div class="cell large-4 align-middle">
+                        <p class="copyright">COPYRIGHT &copy; <script>document.write(new Date().getFullYear())</script> CHRISTIAN SALTARELLI.</p>
+                    </div>
+                    <div class="cell large-8">
+                        <ul class="menu footer-menu">
+                            <li><a href="assets/pdf/grammar.pdf" target="_blank">GRAMMAR</a></li>
+                            <li><a href="https://casaltarelli.com" target="_blank">SITE</a></li>
+                            <li><a href="https://linkedin.com/in/casaltarelli/" target="_blank">LINKEDIN</a></li>
+                            <li><a href="https://github.com/casaltarelli/CMPT-432N-Saltarelli" target="_blank">GITHUB</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
     </section>
 
     <!-- Foundation Dependencies-->

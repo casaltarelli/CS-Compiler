@@ -8,7 +8,28 @@
    ------------ */
 
 //
-// Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
+// Global CONSTANTS
 //
 const APP_NAME: string    = "CSCompiler";
 const APP_VERSION: string = "0.1";
+
+var _Stage = "Lexer";   // Preset to Lexer for first stage of Compilation
+var _PID = 1;           // ID for Current Program
+
+// Compiler 
+var _Compiler: CSCompiler.Compiler;
+var _TokenStream = [];
+var _CurrentProgram;
+
+// Logger
+var _Log: CSCompiler.Logger;
+
+// Lexer
+var _Lexer: CSCompiler.Lexer;
+
+// OnLoad
+var onDocumentLoad = function() {
+   // Instantiate our Compiler
+   _Compiler = new CSCompiler.Compiler; 
+   _Compiler.init();
+}
