@@ -55,4 +55,3 @@ var _Grammar = [
             _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme));
         } } }
 ];
-// if (_Lexer.inComment || _Lexer.inQuote) { _Lexer.update(this.regex)}

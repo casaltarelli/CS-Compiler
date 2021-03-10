@@ -80,5 +80,3 @@ var _Grammar = [
     { priority: 0,  name: "SPACE",      regex: /^\s/, action: 
         function(lexeme) { if (_Lexer.inQuote) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme))}}}
 ];
-
-// if (_Lexer.inComment || _Lexer.inQuote) { _Lexer.update(this.regex)}

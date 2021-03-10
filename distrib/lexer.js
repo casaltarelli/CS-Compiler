@@ -135,7 +135,6 @@ var CSCompiler;
                                     this.lex(0);
                                 }
                                 else {
-                                    //foundToken = false;
                                     if (priority < 3) {
                                         this.lex(priority + 1);
                                     }
@@ -172,9 +171,6 @@ var CSCompiler;
          *   line and char attributes for accurate location.
          */
         Lexer.prototype.update = function (regex, flag) {
-            console.log("-------");
-            console.log("CURRENT PROGRAM BEFORE UPDATE:\n" + this.program);
-            console.log("\nCURRENT REGEX: " + regex);
             // Update Program based on match
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
