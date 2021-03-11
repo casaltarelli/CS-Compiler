@@ -174,7 +174,6 @@ var CSCompiler;
             // Update Program based on match
             var lexeme = this.program.match(regex)[0].length;
             this.program = this.program.substring(lexeme);
-            console.log("CURRENT PROGRAM AFTER UPDATE:\n" + this.program);
             // Update Column Count based on Match Length
             if (!(flag)) { // Flag for BREAK TOKEN
                 this.col = this.col + lexeme;
