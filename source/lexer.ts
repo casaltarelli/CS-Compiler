@@ -41,7 +41,7 @@ module CSCompiler {
          *   determine Rule Order for Longest Match excluding 
          *   special cases.
          */
-        public async lex(priority) {
+        public lex(priority) {
             var current;
 
             if (this.foundEOP) {  // [Base]
@@ -183,8 +183,13 @@ module CSCompiler {
                         data = "Unrecognized or Invalid Token [ " + value + " ] on line " + this.line + " col " + this.col;
                     }
                     break;
+
                 case "RESERVED":
                     data = "Reserved Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
+                    break;
+
+                case "BREAK":
+                    data = "Illegal Character in String [ \\n ] on line " + this.line + " col " + this.col;
                     break;
 
                 default:

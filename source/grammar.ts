@@ -35,8 +35,14 @@ var _Grammar = [
     { priority: 1, name: "QUOTE",       regex: /^"/, action:
         function(lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = _Lexer.inQuote ? false : true; }},
     { priority: 0, name: "BREAK",       regex: /^\n/, action: 
-        function(lexeme) { _Lexer.update(this.regex, true); _Lexer.line++; _Lexer.col = 0; }},
-    { priority: 0, name: "UNDEFINED",   regex: /^([A-Z]|[\~\`\@\#\%\^\&\:\;\'\-\,\.\<\>\?\|])/, action: 
+        function(lexeme) { 
+            if (!_Lexer.inQuote) {
+                _Lexer.update(this.regex, true); _Lexer.line++; _Lexer.col = 0; 
+            } else {
+                _Lexer.emitError(this.name, lexeme);
+            } 
+        }},
+    { priority: 0, name: "UNDEFINED",   regex: /^([A-Z]|[\~\`\@\#\%\^\&\:\;\'\-\,\.\<\>\?\|]|\!(?!=))/, action: 
         function(lexeme) { _Lexer.emitError(this.name, lexeme); }},
     { priority: 4, name: "RESERVED",   regex: /^([0-9]|[{}!=+()\/])/, action: 
         function(lexeme) { _Lexer.emitError(this.name, lexeme); }}, // Priority -1 for Special Case [in quote]
