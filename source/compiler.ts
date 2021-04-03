@@ -28,12 +28,14 @@ module CSCompiler {
 
             // Initalize Compilation Stages
             _Lexer = new Lexer();
+            _Parser = new Parser();
 
             // Validate Input from User
             if (source) {
                 // Reset PID for new compilation
                 _PID = 1;
 
+                out:
                 // Iterate over all Programs
                 for (var program in source) {
                     // Update Current Program
@@ -47,19 +49,36 @@ module CSCompiler {
                     _Lexer.init(_CurrentProgram);
 
                     // Get Token Stream
-                    _TokenStream.push(_Lexer.lex(0));
+                    _Lexer.lex(0);
+                    _TokenStream.push(_Lexer.tokenStream);
 
-                    // Output Lexer Results + Check for Errors
+                    // Announce Stage Completion for Respective Process + Results
                     _Log.output({level: "INFO", data: "Lexical Analysis Complete. " + _Lexer.warnings.length + " WARNING(S) and " 
                         + _Lexer.errors.length + " ERROR(S)\n"});
 
                     if (_Lexer.errors.length > 0) {
                         _Log.output({level: "", data: "--------------------"});
                         _Log.output({level: "INFO", data: "Compliation Stopped due to Lexer errors..."});
-                    } else {
-                        // Increment PID
-                        _PID++;
+                        break out;
                     }
+                    
+                    // Init Parser for New CST
+                    _Parser.init(_TokenStream[program]);
+
+                    // Generate CST
+                    _Parser.parse("Program");
+
+                    // Announce Stage Completion for Respective Process + Results
+                    _Log.output({level: "INFO", data: "Parse Complete. " + _Parser.errors.length + " ERROR(S)\n"});
+
+                    if (_Parser.errors.length > 0) {
+                        _Log.output({level: "", data: "--------------------"});
+                        _Log.output({level: "INFO", data: "Compliation Stopped due to Parser errors..."});
+                        break out;
+                    }
+
+                    // Increment PID
+                    _PID++; 
                 }
 
                 _Log.output({level: "", data: "--------------------"});
