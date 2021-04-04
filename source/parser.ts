@@ -61,7 +61,7 @@ module CSCompiler {
 
                 // Consume Terminals for Respective First Set
                 for (var terminal in production.first[index]) {
-                    this.match(production.name, production.first[index][terminal]);
+                    this.match(production.first[index][terminal]);
                 }
             }
 
@@ -90,7 +90,7 @@ module CSCompiler {
             if (production.follow.length) {
                 // Consume Terminals for Respective Follow Set
                 for (var terminal in production.follow[index]) {
-                    this.match(production.name, production.follow[index][terminal]);
+                    this.match(production.follow[index][terminal]);
                 }
             }
 
@@ -156,8 +156,27 @@ module CSCompiler {
          *   determine if our Current Token matches the expected 
          *   Token according to our Productions.
          */
-        public match(production, expected) {
+        public match(expected) {
+            // Validate Current Token against Expected
+            if (this.tokenStream[this.currentToken].name == expected) {
+                // Create New Node for Terminal
+                // TODO: Add Node for Tree - createChild()
 
+                // Output to Log for Successful Match
+                _Log.output({level: "DEBUG", data: {expected: expected, 
+                            found: this.tokenStream[this.currentToken].name, 
+                            loc: {line: this.tokenStream[this.currentToken].line, 
+                                  col: this.tokenStream[this.currentToken].col}}});
+
+                // Consume Current Token
+                this.tokenStream.shift()
+
+                // Ascend Tree to Parent Node of Child
+                // TODO: Implement Tree for CST - ascendTree()
+            } else {
+                // emitError
+                this.emitError(expected);
+            }
         }
 
         /**
@@ -165,6 +184,16 @@ module CSCompiler {
          * - EmitError handles the creation of our Error Entry and
          *   generating our message object for Log Output.
          */
-        public emitError(type, value) {}
+        public emitError(expected) {
+            // Format Data Message
+            var data = "Expected [ " + expected + " ], found [ " + this.tokenStream[this.currentToken].name + " ] "
+                        + " on line: " + this.tokenStream[this.currentToken].line 
+                        + " col: " + this.tokenStream[this.currentToken].col;
+
+            // Update Error List + Output to User
+            this.errors.push({expected: expected, value: this.tokenStream[this.currentToken].name, 
+                line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col})
+            _Log.output({level: "ERROR", data: data});
+        }
     }
 }

@@ -13,7 +13,7 @@
 const APP_NAME: string    = "CSCompiler";
 const APP_VERSION: string = "0.1";
 
-var _Stage = "Lexical Analysis";    // Preset to Lexer for first stage of Compilation
+var _Stage = "Lexer";    // Preset to Lexer for first stage of Compilation
 var _PID = 1;                       // ID for Current Program
 
 // Compiler 

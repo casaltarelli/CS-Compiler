@@ -54,11 +54,21 @@ var CSCompiler;
                     this.log.value += "INFO - " + msg.data + "\n";
                     break;
                 case "DEBUG":
-                    this.log.value += "DEBUG - " + _Stage
-                        + " - " + msg.data.token.name
-                        + " [ " + msg.data.token.value + " ] "
-                        + " at line: " + msg.data.loc.line
-                        + " col: " + msg.data.loc.col + "\n";
+                    // Format DEBUG Message Depending on Stage
+                    if (_Stage == "Lexer") {
+                        this.log.value += "DEBUG - " + _Stage
+                            + " - " + msg.data.token.name
+                            + " [ " + msg.data.token.value + " ] "
+                            + " at line: " + msg.data.loc.line
+                            + " col: " + msg.data.loc.col + "\n";
+                    }
+                    else if (_Stage == "Parser") {
+                        this.log.value += "DEBUG - " + _Stage
+                            + " - Expected [ " + msg.data.expected + " ],"
+                            + " found [ " + msg.data.found + " ] "
+                            + " on line: " + msg.data.loc.line
+                            + " col: " + msg.data.loc.col + "\n";
+                    }
                     break;
                 case "WARN":
                     this.log.value += "WARN - " + _Stage + " - " + msg.data + "\n";

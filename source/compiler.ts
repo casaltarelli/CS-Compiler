@@ -61,6 +61,9 @@ module CSCompiler {
                         _Log.output({level: "INFO", data: "Compliation Stopped due to Lexer errors..."});
                         break out;
                     }
+
+                    // Update Stage
+                    _Stage = "Parse";
                     
                     // Init Parser for New CST
                     _Parser.init(_TokenStream[program]);

@@ -11,7 +11,7 @@
 //
 var APP_NAME = "CSCompiler";
 var APP_VERSION = "0.1";
-var _Stage = "Lexical Analysis"; // Preset to Lexer for first stage of Compilation
+var _Stage = "Lexer"; // Preset to Lexer for first stage of Compilation
 var _PID = 1; // ID for Current Program
 // Compiler 
 var _Compiler;
