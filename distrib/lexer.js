@@ -167,7 +167,7 @@ var CSCompiler;
         /**
          * emitError(type, value)
          * - EmitError handles the creation of our Error Entry and
-         *   our generating our message object for Log Output.
+         *   generating our message object for Log Output.
          */
         Lexer.prototype.emitError = function (type, value) {
             var data;
