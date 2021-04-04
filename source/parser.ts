@@ -10,7 +10,8 @@ module CSCompiler {
     export class Parser { 
         constructor(public tokenStream = [],
                     public currentToken = null,
-                    public errors = []) {}
+                    public errors = [],
+                    public cst = null) {}
 
         public init(tokenStream: Array<Token> ): void {
             // Announce Parser
@@ -19,6 +20,7 @@ module CSCompiler {
             // Default Attributes
             this.tokenStream = tokenStream;
             this.currentToken = tokenStream[0];
+            this.cst = new Tree();
         }
 
         /**
@@ -32,6 +34,7 @@ module CSCompiler {
             var production = _Productions.filter((production) => {return production.name == p})[0];
 
             // TODO: Create new Node for all New Productions - match() will handle creating Nodes for Terminals
+            this.cst.addNode(production.name, "branch");
 
             // Store Index of Respective Production Rule
             var index = 0;
@@ -78,6 +81,7 @@ module CSCompiler {
                         }
                     } else {
                         // TODO: Define epsilon functionality
+
                     }
                 } else {                // General Case
                     for (var i = 0; i < production.inner[index].length; i++) {
@@ -96,6 +100,7 @@ module CSCompiler {
 
             // Return back to Parent Node of Current Child
             // TODO: Implement Tree for CST - ascendTree()
+            this.cst.ascendTree();
         }
 
         /**
@@ -137,7 +142,8 @@ module CSCompiler {
                     }
                     
                 } else {
-                    // If there is no First Set, we are most likely looking at another Production
+                    // If there is no First Set, we are most likely looking at another Production, we use original to track the 
+                    // current Production we are in before diving into its inner-prouctions.
                     if (original) {
                         return this.peak(production.inner[0], original);
                     } else {
@@ -161,10 +167,11 @@ module CSCompiler {
             if (this.tokenStream[this.currentToken].name == expected) {
                 // Create New Node for Terminal
                 // TODO: Add Node for Tree - createChild()
+                this.cst.addNode(expected, "leaf");
 
                 // Output to Log for Successful Match
                 _Log.output({level: "DEBUG", data: {expected: expected, 
-                            found: this.tokenStream[this.currentToken].name, 
+                            found: this.tokenStream[this.currentToken].value, 
                             loc: {line: this.tokenStream[this.currentToken].line, 
                                   col: this.tokenStream[this.currentToken].col}}});
 
@@ -186,12 +193,12 @@ module CSCompiler {
          */
         public emitError(expected) {
             // Format Data Message
-            var data = "Expected [ " + expected + " ], found [ " + this.tokenStream[this.currentToken].name + " ] "
+            var data = "Expected [ " + expected + " ], found [ " + this.tokenStream[this.currentToken].value + " ] "
                         + " on line: " + this.tokenStream[this.currentToken].line 
                         + " col: " + this.tokenStream[this.currentToken].col;
 
             // Update Error List + Output to User
-            this.errors.push({expected: expected, value: this.tokenStream[this.currentToken].name, 
+            this.errors.push({expected: expected, value: this.tokenStream[this.currentToken].value, 
                 line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col})
             _Log.output({level: "ERROR", data: data});
         }

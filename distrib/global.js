@@ -16,6 +16,7 @@ var _PID = 1; // ID for Current Program
 // Compiler 
 var _Compiler;
 var _TokenStream = [];
+var _CST;
 var _CurrentProgram;
 // Logger
 var _Log;

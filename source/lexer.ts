@@ -18,7 +18,7 @@ module CSCompiler {
                     public foundEOP = false,
                     public program = "") {}
 
-        public init(program: string):void {
+        public init(program: string): void {
             // Announce Lexical Analyzer
             _Log.output({level: "INFO", data: "Starting Lexical Analysis..."});
 
