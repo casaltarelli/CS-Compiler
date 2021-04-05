@@ -10,7 +10,7 @@ var CSCompiler;
     var Parser = /** @class */ (function () {
         function Parser(tokenStream, currentToken, errors, cst) {
             if (tokenStream === void 0) { tokenStream = []; }
-            if (currentToken === void 0) { currentToken = null; }
+            if (currentToken === void 0) { currentToken = 0; }
             if (errors === void 0) { errors = []; }
             if (cst === void 0) { cst = null; }
             this.tokenStream = tokenStream;
@@ -23,7 +23,7 @@ var CSCompiler;
             _Log.output({ level: "INFO", data: "Starting Parse..." });
             // Default Attributes
             this.tokenStream = tokenStream;
-            this.currentToken = tokenStream[0];
+            this.currentToken = 0;
             this.cst = new CSCompiler.Tree();
         };
         /**
@@ -35,7 +35,10 @@ var CSCompiler;
         Parser.prototype.parse = function (p) {
             // Get Production Reference
             var production = _Productions.filter(function (production) { return production.name == p; })[0];
-            // TODO: Create new Node for all New Productions - match() will handle creating Nodes for Terminals
+            console.log("---------------------");
+            console.log("Current Production: " + production.name);
+            var epsilon = false;
+            // Create new Node for Non-Terminal
             this.cst.addNode(production.name, "branch");
             // Store Index of Respective Production Rule
             var index = 0;
@@ -47,7 +50,7 @@ var CSCompiler;
                     var valid = false;
                     inner: for (var j = 0; j < production.first[i].length; j++) {
                         // Verify that for all Terminals in the respective Set that they Match
-                        if (production.first[i][j] == this.tokenStream[this.currentToken + j]) {
+                        if (production.first[i][j] == this.tokenStream[this.currentToken + j].name) {
                             valid = true;
                             break inner;
                         }
@@ -68,20 +71,25 @@ var CSCompiler;
             // Check for Inner-Production(s)
             if (production.inner.length) {
                 // Verify if we need to Seek for the correct Inner-Production
-                if (production.peek) { // Special Case [StatementList, Statement, Expr]
+                if (production.peek) { // Special Case [Block, StatementList, Statement, Expr]
                     // Get Correct Production
-                    var next = this.peak(production.inner[index]);
+                    var next = this.peek(production.inner[index]);
                     if (next != null) {
                         for (var i = 0; i < next.length; i++) {
+                            this.emitMatch(production.name, next[i]);
                             this.parse(next[i]);
                         }
                     }
                     else {
-                        // TODO: Define epsilon functionality
+                        // Epsilon Case + EmitMatch
+                        console.log("Epsilon Case Hit!");
+                        epsilon = true;
+                        this.emitMatch(production.inner[0], "\u03B5");
                     }
                 }
                 else { // General Case
                     for (var i = 0; i < production.inner[index].length; i++) {
+                        this.emitMatch(production.name, production.inner[index][i]);
                         this.parse(production.inner[index][i]);
                     }
                 }
@@ -94,7 +102,7 @@ var CSCompiler;
                 }
             }
             // Return back to Parent Node of Current Child
-            // TODO: Implement Tree for CST - ascendTree()
+            console.log("Production Calling Ascend: " + production.name);
             this.cst.ascendTree();
         };
         /**
@@ -106,11 +114,11 @@ var CSCompiler;
          *   we return the name of the production to follow
          *   and continue parsing.
          */
-        Parser.prototype.peak = function (productions, original) {
+        Parser.prototype.peek = function (productions, original) {
             // Iterate over Potential Productions
             for (var p in productions) {
                 // Get Reference to Respective Production
-                var production = _Productions.filter(function (production) { return production.name == p; })[0];
+                var production = _Productions.filter(function (production) { return production.name == productions[p]; })[0];
                 // Check First Set for Terminals that can aid in our Decision
                 if (production.first.length) {
                     for (var i = 0; i < production.first.length; i++) {
@@ -141,10 +149,10 @@ var CSCompiler;
                     // If there is no First Set, we are most likely looking at another Production, we use original to track the 
                     // current Production we are in before diving into its inner-prouctions.
                     if (original) {
-                        return this.peak(production.inner[0], original);
+                        return this.peek(production.inner[0], original);
                     }
                     else {
-                        return this.peak(production.inner[0], production.name);
+                        return this.peek(production.inner[0], production.name);
                     }
                 }
             }
@@ -161,21 +169,36 @@ var CSCompiler;
             // Validate Current Token against Expected
             if (this.tokenStream[this.currentToken].name == expected) {
                 // Create New Node for Terminal
-                // TODO: Add Node for Tree - createChild()
-                this.cst.addNode(expected, "leaf");
+                this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
                 // Output to Log for Successful Match
+                this.emitMatch(expected);
+                // Consume Current Token + Ascend Tree to Parent
+                this.tokenStream.shift();
+                //console.log("Match Calling Ascend: " + expected);
+                //this.cst.ascendTree();
+            }
+            else {
+                // emitError for incorrect Token
+                this.emitError(expected);
+            }
+        };
+        /**
+         * emitMatch(expected, production?)
+         * - EmitMatch handles generating our message object
+         *   for Log Output.
+         */
+        Parser.prototype.emitMatch = function (expected, production) {
+            if (production) {
+                _Log.output({ level: "DEBUG", data: { expected: expected,
+                        found: production,
+                        loc: { line: this.tokenStream[this.currentToken].line,
+                            col: this.tokenStream[this.currentToken].col } } });
+            }
+            else {
                 _Log.output({ level: "DEBUG", data: { expected: expected,
                         found: this.tokenStream[this.currentToken].value,
                         loc: { line: this.tokenStream[this.currentToken].line,
                             col: this.tokenStream[this.currentToken].col } } });
-                // Consume Current Token
-                this.tokenStream.shift();
-                // Ascend Tree to Parent Node of Child
-                // TODO: Implement Tree for CST - ascendTree()
-            }
-            else {
-                // emitError
-                this.emitError(expected);
             }
         };
         /**

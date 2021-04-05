@@ -64,13 +64,13 @@
                             this.log.value += "DEBUG - " + _Stage   
                                             + " - " + msg.data.token.name 
                                             + " [ " + msg.data.token.value + " ] "
-                                            + " at line: " + msg.data.loc.line
+                                            + "at line: " + msg.data.loc.line
                                             + " col: " + msg.data.loc.col + "\n";
                         } else if (_Stage == "Parser") {
                             this.log.value += "DEBUG - " + _Stage
-                                            + " - Expected [ " + msg.data.expected +" ],"
+                                            + " - Expecting [ " + msg.data.expected +" ],"
                                             + " found [ " + msg.data.found + " ] "
-                                            + " on line: " + msg.data.loc.line
+                                            + "on line: " + msg.data.loc.line
                                             + " col: " + msg.data.loc.col + "\n";
                         }
                         

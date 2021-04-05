@@ -12,7 +12,7 @@ module CSCompiler {
 
         public init(): void {
             this.root = null;
-            this.current = {};
+            this.current = null;
         }
 
         /**
@@ -29,19 +29,27 @@ module CSCompiler {
                 parent: {}
             };
 
+            console.log("--------Tree--------")
+            console.log("Adding Node... " + node.name);
+
             // Check if New Node is Root
             if (!this.root) {
                 this.root = node; 
                 this.current = node;
+
+                console.log("Node is Root: " + node.name);
             } else {
                 // Otherwise, we are dealing with a Child so our Current is the Parent
                 node.parent = this.current;
                 this.current.children.push(node);
 
-                // Validate Type to determine Leaf or Branch
+                console.log("Node is Child, Parent: " + this.current.name);
+
+                // Validate Type to determine if we need to update our Current
                 if (type == "branch") {
                     // Update Current Pointer
                     this.current = node;
+                    console.log("Updating Current, New Current: " + this.current.name);
                 }
             }
         }
@@ -57,8 +65,12 @@ module CSCompiler {
             if (this.current.name != this.root.name) {
                 // Check if Parent Exists on Current Node
                 if (this.current.parent) {
+                    console.log("We have ascended!");
                     this.current = this.current.parent;
+                    console.log("New Current: " + this.current.name);
                 }
+            } else {
+                console.log("Attempt to ascend when on Root Node");
             }
         }
 
@@ -71,7 +83,7 @@ module CSCompiler {
          */
         public toString() {
             // Initialize Data for Tree
-            var data;
+            var data = "";
 
             // Recursively Traverse through the Tree
             function expand(node, depth) {
@@ -82,14 +94,14 @@ module CSCompiler {
                 // Check if Node contains Children   [Leaf]
                 if (node.children.length) {
                     // Add Leaf Node to Data
-                    data += " < " + node.name + " > \n";
+                    data += "<" + node.name + ">\n";
 
                     // Recursively Expand Leafs
                     for (var i = 0; i < node.children.length; i++) {
                         expand(node.children[i], depth + 1);
                     }
                 } else {  //                         [Branch]
-                    data += " [ " + node.name + " ] \n"
+                    data += "[" + node.name + "]\n"
                 }
             }
 

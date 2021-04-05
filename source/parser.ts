@@ -9,7 +9,7 @@
 module CSCompiler {
     export class Parser { 
         constructor(public tokenStream = [],
-                    public currentToken = null,
+                    public currentToken = 0,
                     public errors = [],
                     public cst = null) {}
 
@@ -19,7 +19,7 @@ module CSCompiler {
 
             // Default Attributes
             this.tokenStream = tokenStream;
-            this.currentToken = tokenStream[0];
+            this.currentToken = 0;
             this.cst = new Tree();
         }
 
@@ -32,8 +32,12 @@ module CSCompiler {
         public parse(p) {
             // Get Production Reference
             var production = _Productions.filter((production) => {return production.name == p})[0];
+            console.log("---------------------");
+            console.log("Current Production: " + production.name);
 
-            // TODO: Create new Node for all New Productions - match() will handle creating Nodes for Terminals
+            var epsilon = false;
+
+            // Create new Node for Non-Terminal
             this.cst.addNode(production.name, "branch");
 
             // Store Index of Respective Production Rule
@@ -48,7 +52,7 @@ module CSCompiler {
                     inner:
                     for (var j = 0; j < production.first[i].length; j++) {
                         // Verify that for all Terminals in the respective Set that they Match
-                        if (production.first[i][j] == this.tokenStream[this.currentToken + j]) {
+                        if (production.first[i][j] == this.tokenStream[this.currentToken + j].name) {
                             valid = true;
                             break inner;
                         } else {
@@ -71,20 +75,24 @@ module CSCompiler {
             // Check for Inner-Production(s)
             if (production.inner.length) {
                 // Verify if we need to Seek for the correct Inner-Production
-                if (production.peek) {  // Special Case [StatementList, Statement, Expr]
+                if (production.peek) {  // Special Case [Block, StatementList, Statement, Expr]
                     // Get Correct Production
-                    var next = this.peak(production.inner[index]);
+                    var next = this.peek(production.inner[index]);
 
                     if (next != null) {
                         for (var i = 0; i < next.length; i++) {
+                            this.emitMatch(production.name, next[i]);
                             this.parse(next[i]);
                         }
                     } else {
-                        // TODO: Define epsilon functionality
-
+                        // Epsilon Case + EmitMatch
+                        console.log("Epsilon Case Hit!");
+                        epsilon = true;
+                        this.emitMatch(production.inner[0], "\u03B5");
                     }
                 } else {                // General Case
                     for (var i = 0; i < production.inner[index].length; i++) {
+                        this.emitMatch(production.name, production.inner[index][i]);
                         this.parse(production.inner[index][i]);
                     }
                 }
@@ -99,8 +107,9 @@ module CSCompiler {
             }
 
             // Return back to Parent Node of Current Child
-            // TODO: Implement Tree for CST - ascendTree()
+            console.log("Production Calling Ascend: " + production.name);
             this.cst.ascendTree();
+            
         }
 
         /**
@@ -112,11 +121,11 @@ module CSCompiler {
          *   we return the name of the production to follow
          *   and continue parsing.
          */
-        public peak(productions: Array<String>, original?) {
+        public peek(productions: Array<String>, original?) {
             // Iterate over Potential Productions
             for (var p in productions) {
                 // Get Reference to Respective Production
-                var production = _Productions.filter((production) => {return production.name == p})[0];
+                var production = _Productions.filter((production) => {return production.name == productions[p]})[0];
 
                 // Check First Set for Terminals that can aid in our Decision
                 if (production.first.length) {
@@ -145,9 +154,9 @@ module CSCompiler {
                     // If there is no First Set, we are most likely looking at another Production, we use original to track the 
                     // current Production we are in before diving into its inner-prouctions.
                     if (original) {
-                        return this.peak(production.inner[0], original);
+                        return this.peek(production.inner[0], original);
                     } else {
-                        return this.peak(production.inner[0], production.name);
+                        return this.peek(production.inner[0], production.name);
                     }
                 }
             }
@@ -166,23 +175,37 @@ module CSCompiler {
             // Validate Current Token against Expected
             if (this.tokenStream[this.currentToken].name == expected) {
                 // Create New Node for Terminal
-                // TODO: Add Node for Tree - createChild()
-                this.cst.addNode(expected, "leaf");
+                this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
 
                 // Output to Log for Successful Match
-                _Log.output({level: "DEBUG", data: {expected: expected, 
-                            found: this.tokenStream[this.currentToken].value, 
-                            loc: {line: this.tokenStream[this.currentToken].line, 
-                                  col: this.tokenStream[this.currentToken].col}}});
+                this.emitMatch(expected);
 
-                // Consume Current Token
+                // Consume Current Token + Ascend Tree to Parent
                 this.tokenStream.shift()
-
-                // Ascend Tree to Parent Node of Child
-                // TODO: Implement Tree for CST - ascendTree()
+                //console.log("Match Calling Ascend: " + expected);
+                //this.cst.ascendTree();
             } else {
-                // emitError
+                // emitError for incorrect Token
                 this.emitError(expected);
+            }
+        }
+
+        /**
+         * emitMatch(expected, production?) 
+         * - EmitMatch handles generating our message object
+         *   for Log Output.
+         */
+        public emitMatch(expected, production?) {
+            if (production) {
+                _Log.output({level: "DEBUG", data: {expected: expected, 
+                    found: production, 
+                    loc: {line: this.tokenStream[this.currentToken].line, 
+                    col: this.tokenStream[this.currentToken].col}}});   
+            } else {
+                _Log.output({level: "DEBUG", data: {expected: expected, 
+                    found: this.tokenStream[this.currentToken].value, 
+                    loc: {line: this.tokenStream[this.currentToken].line, 
+                    col: this.tokenStream[this.currentToken].col}}});
             }
         }
 

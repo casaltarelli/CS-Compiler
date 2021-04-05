@@ -53,7 +53,7 @@ var CSCompiler;
                         break out;
                     }
                     // Update Stage
-                    _Stage = "Parse";
+                    _Stage = "Parser";
                     // Init Parser for New CST
                     _Parser.init(_TokenStream[program]);
                     // Generate CST
@@ -65,6 +65,9 @@ var CSCompiler;
                         _Log.output({ level: "INFO", data: "Compliation Stopped due to Parser errors..." });
                         break out;
                     }
+                    // Output CST Generated from Parse
+                    _Log.output({ level: "", data: "Concrete-Syntax Tree generated from program " + _PID });
+                    _Log.output({ level: "", data: _Parser.cst.toString() });
                     // Increment PID
                     _PID++;
                 }

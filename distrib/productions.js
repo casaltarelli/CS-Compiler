@@ -19,10 +19,10 @@
 ----- */
 var _Productions = [
     { name: "Program", first: [], follow: [["EOP"]], inner: [["Block"]] },
-    { name: "Block", first: [["L_BRACE"]], follow: [["R_BRACE"]], inner: [["StatementList"]] },
+    { name: "Block", first: [["L_BRACE"]], follow: [["R_BRACE"]], inner: [["StatementList"]], peek: true },
     { name: "StatementList", first: [], follow: [], inner: [["Statement", "StatementList"]], peek: true },
     { name: "Statement", first: [], follow: [],
-        inner: [["PrintStatement", "AssignmentStatement", "VarDecl", "WhileStatement", "IfStatement"]], peek: true },
+        inner: [["PrintStatement", "AssignmentStatement", "VarDecl", "WhileStatement", "IfStatement", "Block"]], peek: true },
     { name: "PrintStatement", first: [["PRINT", "L_PARAN"]], follow: [["R_PARAN"]], inner: [["Expr"]] },
     { name: "AssignmentStatement", first: [["ID", "ASSIGN_OP"]], follow: [], inner: [["Expr"]] },
     { name: "VarDecl", first: [], follow: [], inner: [["Type", "ID"]] },
@@ -31,7 +31,7 @@ var _Productions = [
     { name: "Expr", first: [], follow: [],
         inner: [["IntExpr", "StringExpr", "BooleanExpr", "ID"]], peek: true },
     { name: "IntExpr", first: [["DIGIT", "INT_OP"], ["DIGIT"]], follow: [], inner: [["Expr"], []] },
-    { name: "StringExpr", first: [["QUOTE"]], follow: [["QUOTE"]], inner: [["CHARLIST"]] },
+    { name: "StringExpr", first: [["QUOTE"]], follow: [["QUOTE"]], inner: [["CharList"]] },
     { name: "BooleanExpr", first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []], inner: [["Expr", "BoolOp", "Expr"], []] },
     { name: "ID", first: [["ID"]], follow: [], inner: [] },
     { name: "CharList", first: [["CHAR"], ["SPACE"]], follow: [], inner: [["CharList"], ["CharList"]], peek: true },
