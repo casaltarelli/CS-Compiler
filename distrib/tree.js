@@ -31,24 +31,24 @@ var CSCompiler;
                 children: [],
                 parent: {}
             };
-            console.log("--------Tree--------");
-            console.log("Adding Node... " + node.name);
+            // console.log("--------Tree--------")
+            // console.log("Adding Node... " + node.name);
             // Check if New Node is Root
             if (!this.root) {
                 this.root = node;
                 this.current = node;
-                console.log("Node is Root: " + node.name);
+                // console.log("Node is Root: " + node.name);
             }
             else {
                 // Otherwise, we are dealing with a Child so our Current is the Parent
                 node.parent = this.current;
                 this.current.children.push(node);
-                console.log("Node is Child, Parent: " + this.current.name);
+                // console.log("Node is Child, Parent: " + this.current.name);
                 // Validate Type to determine if we need to update our Current
                 if (type == "branch") {
                     // Update Current Pointer
                     this.current = node;
-                    console.log("Updating Current, New Current: " + this.current.name);
+                    // console.log("Updating Current, New Current: " + this.current.name);
                 }
             }
         };
@@ -63,9 +63,9 @@ var CSCompiler;
             if (this.current.name != this.root.name) {
                 // Check if Parent Exists on Current Node
                 if (this.current.parent) {
-                    console.log("We have ascended!");
+                    // console.log("We have ascended!");
                     this.current = this.current.parent;
-                    console.log("New Current: " + this.current.name);
+                    // console.log("New Current: " + this.current.name);
                 }
             }
             else {

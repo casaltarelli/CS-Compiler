@@ -24,6 +24,7 @@ var CSCompiler;
             // Default Attributes
             this.tokenStream = tokenStream;
             this.currentToken = 0;
+            this.errors = [];
             this.cst = new CSCompiler.Tree();
         };
         /**
@@ -33,39 +34,32 @@ var CSCompiler;
          *   while simutaneously generating our Concrete-Syntax Tree.
          */
         Parser.prototype.parse = function (p) {
-            // Get Production Reference
+            // Get Production Reference + Index of Production Rule
             var production = _Productions.filter(function (production) { return production.name == p; })[0];
+            var index = this.getRule(production.first);
             console.log("---------------------");
             console.log("Current Production: " + production.name);
-            var epsilon = false;
             // Create new Node for Non-Terminal
-            this.cst.addNode(production.name, "branch");
+            if (!this.peek || this.peek(production.inner[index]) != null) {
+                this.cst.addNode(production.name, "branch");
+            }
             // Store Index of Respective Production Rule
             var index = 0;
             // Check First Set for Terminal Symbols
             if (production.first.length) {
-                outer: 
-                // Iterate over nested Terminal Symbols to determine Rule
-                for (var i = 0; i < production.first.length; i++) {
-                    var valid = false;
-                    inner: for (var j = 0; j < production.first[i].length; j++) {
-                        // Verify that for all Terminals in the respective Set that they Match
-                        if (production.first[i][j] == this.tokenStream[this.currentToken + j].name) {
-                            valid = true;
-                            break inner;
+                // Consume Terminals for Respective First Set
+                if (production.ambiguous) {
+                    this.match(production.name, production.first[index], true);
+                }
+                else {
+                    for (var terminal in production.first[index]) {
+                        if (production.first[index][terminal] == "ID" && production.name != "ID") {
+                            this.parse(production.first[index][terminal]);
                         }
                         else {
-                            valid = false;
+                            this.match(production.name, production.first[index][terminal]);
                         }
                     }
-                    if (valid) {
-                        index = i;
-                        break outer;
-                    }
-                }
-                // Consume Terminals for Respective First Set
-                for (var terminal in production.first[index]) {
-                    this.match(production.first[index][terminal]);
                 }
             }
             // Check for Inner-Production(s)
@@ -73,7 +67,9 @@ var CSCompiler;
                 // Verify if we need to Seek for the correct Inner-Production
                 if (production.peek) { // Special Case [Block, StatementList, Statement, Expr]
                     // Get Correct Production
+                    console.log("-----------------");
                     var next = this.peek(production.inner[index]);
+                    console.log("Original P: " + production.name + " Returned from Peek: " + next);
                     if (next != null) {
                         for (var i = 0; i < next.length; i++) {
                             this.emitMatch(production.name, next[i]);
@@ -83,8 +79,7 @@ var CSCompiler;
                     else {
                         // Epsilon Case + EmitMatch
                         console.log("Epsilon Case Hit!");
-                        epsilon = true;
-                        this.emitMatch(production.inner[0], "\u03B5");
+                        this.emitMatch(production.inner[0][0], "\u03B5");
                     }
                 }
                 else { // General Case
@@ -98,11 +93,10 @@ var CSCompiler;
             if (production.follow.length) {
                 // Consume Terminals for Respective Follow Set
                 for (var terminal in production.follow[index]) {
-                    this.match(production.follow[index][terminal]);
+                    this.match(production.name, production.follow[index][terminal]);
                 }
             }
             // Return back to Parent Node of Current Child
-            console.log("Production Calling Ascend: " + production.name);
             this.cst.ascendTree();
         };
         /**
@@ -125,7 +119,7 @@ var CSCompiler;
                         for (var j = 0; j < production.first[i].length; j++) {
                             if (production.first[i][j] == this.tokenStream[this.currentToken].name) {
                                 if (original) {
-                                    if (original == "Statment") { // Really annoying special case
+                                    if (original == "Statement") { // Really annoying special case
                                         return [original, "StatementList"]; // regarding when predicting StatementList
                                     }
                                     else { // peek is nice because when nothing 
@@ -156,18 +150,65 @@ var CSCompiler;
                     }
                 }
             }
+            // Return null for Epsilon Case
             return null;
         };
         /**
-         * match(prodution, expected)
+         * getRule(productions): int
+         * - GetRule is used to determine which Rule our Parser
+         *   needs to follow for a respective production. Based
+         *   on that Productions First Set
+         *   Defaults to Rule 0.
+         */
+        Parser.prototype.getRule = function (first) {
+            var rule = 0; // Default Case
+            // Only Seek for Correct Rule if Production conatins multiple rules
+            if (first.length) {
+                out: 
+                // Iterate over nested Terminal Symbols to determine Rule
+                for (var i = 0; i < first.length; i++) {
+                    var valid = false;
+                    for (var j = 0; j < first[i].length; j++) {
+                        // Verify that for all Terminals in the respective Set that they Match
+                        if (first[i][j] == this.tokenStream[this.currentToken + j].name) {
+                            valid = true;
+                        }
+                        else {
+                            valid = false;
+                        }
+                    }
+                    if (valid) {
+                        rule = i;
+                        break out;
+                    }
+                }
+            }
+            return rule;
+        };
+        /**
+         * match(production, expected, ambiguous?)
          * - Match is used as the primary pilot for our Parser,
          *   when we expect a terminal symbol, we use match to
          *   determine if our Current Token matches the expected
          *   Token according to our Productions.
          */
-        Parser.prototype.match = function (expected) {
-            // Validate Current Token against Expected
-            if (this.tokenStream[this.currentToken].name == expected) {
+        Parser.prototype.match = function (production, expected, ambiguous) {
+            var match = false;
+            // Check if Expected could be multiple values, otherwise compare as normal
+            out: if (ambiguous) {
+                for (var term in expected) {
+                    if (this.tokenStream[this.currentToken].name == expected[term]) {
+                        expected = production;
+                        match = true;
+                        break out;
+                    }
+                }
+            }
+            else if (this.tokenStream[this.currentToken].name == expected) {
+                match = true;
+            }
+            // Valid Match Found for Token
+            if (match) {
                 // Create New Node for Terminal
                 this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
                 // Output to Log for Successful Match

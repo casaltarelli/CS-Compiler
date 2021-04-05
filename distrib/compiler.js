@@ -29,13 +29,15 @@ var CSCompiler;
             _Parser = new CSCompiler.Parser();
             // Validate Input from User
             if (source) {
-                // Reset PID for new compilation
+                // Reset PID + TokenStream for new compilation
                 _PID = 1;
+                _TokenStream = [];
                 out: 
                 // Iterate over all Programs
                 for (var program in source) {
-                    // Update Current Program
+                    // Update Current Program + Reset Stage
                     _CurrentProgram = source[program];
+                    _Stage = "Lexer";
                     // Announce Compilation Start
                     _Log.output({ level: "", data: "--------------------" });
                     _Log.output({ level: "", data: "Compiling Program " + _PID + "\n" });
