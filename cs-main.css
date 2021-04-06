@@ -53,7 +53,7 @@ body {
 
 /* -- Menu */
 .main-menu {
-    width: 100vw;
+    width: 100%;
     padding-top: 50px;
     text-align: left;
 
@@ -89,7 +89,29 @@ body {
     position: relative;
     display: inline-block;
 
+    background-color: #F7F6FB;
+
     transition: all 0.6s;
+}
+
+#btn-tests:hover {
+    background-color: #D8D8D8;
+}
+
+#verbose-toggle {
+    width: 100px;
+    background-color: #F7F6FB;
+    border: 2px solid #38B000;
+
+    transition: all 0.6s;
+}
+
+#verbose-toggle:hover {
+    background-color: #D8D8D8;
+}
+
+#verbose-toggle:focus {
+    outline: none;
 }
 
 /* -- Compiler */
@@ -356,6 +378,7 @@ body {
     transform: translateY(10px);
     opacity: 1;    
 }  
+
 /* - Mobile Styling */
 @media only screen and (max-width: 39.9375em) {
     .modal {
@@ -373,4 +396,4 @@ body {
     .modal-close {
         right: 20px !important;
     }
-} 
+}

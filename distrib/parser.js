@@ -225,7 +225,7 @@ var CSCompiler;
                 match = true;
             }
             // Valid Match Found for Token
-            if (match) {
+            if (match && this.parsing == true) {
                 // Create New Node for Terminal
                 this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
                 // Output to Log for Successful Match
@@ -265,7 +265,9 @@ var CSCompiler;
          */
         Parser.prototype.emitError = function (expected) {
             // Check Parsing Flag to prevent output of Additional Messages after initial Error
-            if (this.parsing) {
+            if (this.parsing == true) {
+                // Update Parsing Flag
+                this.parsing = false;
                 // Format Data Message
                 var data = "Expected [ " + expected + " ], found [ " + this.tokenStream[this.currentToken].value + " ] "
                     + " on line: " + this.tokenStream[this.currentToken].line
@@ -274,8 +276,6 @@ var CSCompiler;
                 this.errors.push({ expected: expected, value: this.tokenStream[this.currentToken].value,
                     line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
                 _Log.output({ level: "ERROR", data: data });
-                // Update Parsing Flag
-                this.parsing = false;
             }
         };
         return Parser;

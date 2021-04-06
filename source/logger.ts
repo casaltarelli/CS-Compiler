@@ -52,6 +52,12 @@
              *   properly format data to our User.
              */
             public output(msg): void {
+                // Validate Verbose Mode
+                if (!_Verbose && msg.level != "INFO") {
+                    console.log("Case hit!");
+                    return; 
+                }
+
                 // Determine Msg Type for Output Formatting
                 switch(msg.level) {
                     case "INFO":
@@ -91,14 +97,6 @@
 
                 // Automatically Scroll to Bottom if overflow
                 this.log.scrollTop = this.log.scrollHeight;
-            }
-
-            /**
-             * setMode(m)
-             * - Allows User to decide Log Level for Output.
-             */
-            public setMode(m): void {
-                this.mode = m; // Doesn't need to be validated due to hardcoded Param Given
             }
 
             /**

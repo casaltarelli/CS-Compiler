@@ -27,7 +27,7 @@
 ----- */
 var _Productions = [
     { name: "Program", first: [], follow: [["EOP"]], inner: [["Block"]] },
-    { name: "Block", first: [["L_BRACE"]], follow: [["R_BRACE"]], inner: [["StatementList"]], peek: true },
+    { name: "Block", first: [["L_BRACE"]], follow: [["R_BRACE"]], inner: [["StatementList"]] },
     { name: "StatementList", first: [], follow: [], inner: [["Statement", "StatementList"]], peek: true },
     { name: "Statement", first: [], follow: [],
         inner: [["Block", "PrintStatement", "WhileStatement", "IfStatement", "AssignmentStatement", "VarDecl"]], peek: true },

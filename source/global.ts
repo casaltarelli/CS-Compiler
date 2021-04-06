@@ -15,6 +15,7 @@ const APP_VERSION: string = "0.1";
 
 var _Stage = "Lexer";    // Preset to Lexer for first stage of Compilation
 var _PID = 1;            // ID for Current Program
+var _Verbose = true;
 
 // Compiler 
 var _Compiler: CSCompiler.Compiler;
