@@ -32,7 +32,7 @@ var _Productions = [
     { name: "StatementList",        first: [],                      follow: [],             inner: [["Statement", "StatementList"]], peek: true  }, // Peek
 
     { name: "Statement",            first: [],                      follow: [],      
-            inner: [["PrintStatement", "AssignmentStatement", "VarDecl", "WhileStatement", "IfStatement", "Block"]], peek: true }, // Peek
+            inner: [["Block", "PrintStatement", "WhileStatement", "IfStatement", "AssignmentStatement", "VarDecl"]], peek: true }, // Peek
 
     { name: "PrintStatement",       first: [["PRINT", "L_PARAN"]],  follow: [["R_PARAN"]],  inner: [["Expr"]] },
     { name: "AssignmentStatement",  first: [["ID", "ASSIGN_OP"]],   follow: [],             inner: [["Expr"]] },
@@ -49,14 +49,16 @@ var _Productions = [
     { name: "BooleanExpr",          first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []],inner: [["Expr", "BoolOp", "Expr"], []] },
 
     { name: "ID",                   first: [["ID"]],                follow: [],             inner: [] },
-    { name: "CharList",             first: [["CHAR"], ["SPACE"]],   follow: [],             inner: [["CharList"], ["CharList"]], peek: true }, // Peek
+    { name: "CharList",             first: [["CHAR"], ["SPACE"]],     follow: [],             inner: [["CharList"], ["CharList"]], peek: true }, // Peek
 
     { name: "Type",                 first: [["INT", "STRING", "BOOLEAN"]], follow: [],      inner: [], ambiguous: true},
     { name: "BoolOp",               first: [["BOOL_OP"]],           follow: [],             inner: [] },
     { name: "BoolVal",              first: [["BOOL_VAL"]],          follow: [],             inner: [] },
     { name: "IntOp",                first: [["INT_OP"]],            follow: [],             inner: [] },
 
-    { name: "Digit",                first: [["DIGIT"]],             follow: [],             inner: [] },
-    { name: "Char",                 first: [["CHAR"]],              follow: [],             inner: [] },
-    { name: "Space",                first: [["SPACE"]],             follow: [],             inner: [] }
+    { name: "DIGIT",                first: [["DIGIT"]],             follow: [],             inner: [] },
+    { name: "CHAR",                 first: [["CHAR"]],              follow: [],             inner: [] },
+    { name: "SPACE",                first: [["SPACE"]],             follow: [],             inner: [] }
 ]
+
+// ["CHAR"], ["SPACE"]

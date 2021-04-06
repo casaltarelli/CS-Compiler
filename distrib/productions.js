@@ -30,7 +30,7 @@ var _Productions = [
     { name: "Block", first: [["L_BRACE"]], follow: [["R_BRACE"]], inner: [["StatementList"]], peek: true },
     { name: "StatementList", first: [], follow: [], inner: [["Statement", "StatementList"]], peek: true },
     { name: "Statement", first: [], follow: [],
-        inner: [["PrintStatement", "AssignmentStatement", "VarDecl", "WhileStatement", "IfStatement", "Block"]], peek: true },
+        inner: [["Block", "PrintStatement", "WhileStatement", "IfStatement", "AssignmentStatement", "VarDecl"]], peek: true },
     { name: "PrintStatement", first: [["PRINT", "L_PARAN"]], follow: [["R_PARAN"]], inner: [["Expr"]] },
     { name: "AssignmentStatement", first: [["ID", "ASSIGN_OP"]], follow: [], inner: [["Expr"]] },
     { name: "VarDecl", first: [], follow: [], inner: [["Type", "ID"]] },
@@ -47,7 +47,8 @@ var _Productions = [
     { name: "BoolOp", first: [["BOOL_OP"]], follow: [], inner: [] },
     { name: "BoolVal", first: [["BOOL_VAL"]], follow: [], inner: [] },
     { name: "IntOp", first: [["INT_OP"]], follow: [], inner: [] },
-    { name: "Digit", first: [["DIGIT"]], follow: [], inner: [] },
-    { name: "Char", first: [["CHAR"]], follow: [], inner: [] },
-    { name: "Space", first: [["SPACE"]], follow: [], inner: [] }
+    { name: "DIGIT", first: [["DIGIT"]], follow: [], inner: [] },
+    { name: "CHAR", first: [["CHAR"]], follow: [], inner: [] },
+    { name: "SPACE", first: [["SPACE"]], follow: [], inner: [] }
 ];
+// ["CHAR"], ["SPACE"]

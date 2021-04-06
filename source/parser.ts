@@ -8,7 +8,8 @@
 
 module CSCompiler {
     export class Parser { 
-        constructor(public tokenStream = [],
+        constructor(public parsing = true,
+                    public tokenStream = [],
                     public currentToken = 0,
                     public errors = [],
                     public cst = null) {}
@@ -18,6 +19,7 @@ module CSCompiler {
             _Log.output({level: "INFO", data: "Starting Parse..."});
 
             // Default Attributes
+            this.parsing = true;
             this.tokenStream = tokenStream;
             this.currentToken = 0;
             this.errors = [];
@@ -34,74 +36,81 @@ module CSCompiler {
             // Get Production Reference + Index of Production Rule
             var production = _Productions.filter((production) => {return production.name == p})[0];
             var index = this.getRule(production.first);
-            console.log("---------------------");
-            console.log("Current Production: " + production.name);
+            var epsilon = false;    // Epsilon Flag for ascendTree
 
-            // Create new Node for Non-Terminal
-            if (!this.peek || this.peek(production.inner[index]) != null) {
-                this.cst.addNode(production.name, "branch");
-            }
-            
-            // Store Index of Respective Production Rule
-            var index = 0;
+            // Check if we have consumed all Tokens from Stream
+            if (this.parsing && this.tokenStream.length == 0) {
+                // Return generated CST
+                return this.cst;
+            } else {
+                // Validate that Parse hasn't found any Errors
+                if (this.parsing) {
+                    // Create new Node for Non-Terminal
+                    if (!production.peek) {
+                        this.cst.addNode(production.name, "branch");
+                    } else if (this.peek(production.inner[index]) != null) {
+                        this.cst.addNode(production.name, "branch");    
+                    }
 
-            // Check First Set for Terminal Symbols
-            if (production.first.length) {
-                // Consume Terminals for Respective First Set
-                if (production.ambiguous) {
-                    this.match(production.name, production.first[index], true);
-                } else {
-                    for (var terminal in production.first[index]) {
-                        if (production.first[index][terminal] == "ID" && production.name != "ID") {
-                            this.parse(production.first[index][terminal]);
+                    // Check First Set for Terminal Symbols
+                    if (production.first.length) {
+                        // Consume Terminals for Respective First Set
+                        if (production.ambiguous) {
+                            this.match(production.name, production.first[index], true);
                         } else {
-                            this.match(production.name, production.first[index][terminal]);
+                            for (var terminal in production.first[index]) {
+                                if (_Productions.filter((p) => {return p.name == production.first[index][terminal]}).length
+                                && production.name != production.first[index][terminal]) {
+                                    this.parse(production.first[index][terminal]);
+                                } else {
+                                    this.match(production.name, production.first[index][terminal]);
+                                }
+                            }
                         }
                     }
-                }
-            }
 
-            // Check for Inner-Production(s)
-            if (production.inner.length) {
-                // Verify if we need to Seek for the correct Inner-Production
-                if (production.peek) {  // Special Case [Block, StatementList, Statement, Expr]
-                    // Get Correct Production
-                    console.log("-----------------");
-                    var next = this.peek(production.inner[index]);
+                    // Check for Inner-Production(s)
+                    if (production.inner.length) {
+                        // Verify if we need to Seek for the correct Inner-Production
+                        if (production.peek) {  // Special Case [Block, StatementList, Statement, Expr]
+                            // Get Correct Production
+                            var next = this.peek(production.inner[index]);
 
-                    console.log("Original P: " + production.name + " Returned from Peek: " + next);
-
-                    if (next != null) {
-                        for (var i = 0; i < next.length; i++) {
-                            this.emitMatch(production.name, next[i]);
-                            this.parse(next[i]);
+                            if (next != null) {
+                                for (var i = 0; i < next.length; i++) {
+                                    this.emitMatch(production.name, next[i]);
+                                    this.parse(next[i]);
+                                }
+                            } else {
+                                // Epsilon Case + EmitMatch
+                                epsilon = true;
+                                this.emitMatch(production.inner[0][0], "\u03B5");
+                            }
+                        } else {                // General Case
+                            for (var i = 0; i < production.inner[index].length; i++) {
+                                this.emitMatch(production.name, production.inner[index][i]);
+                                this.parse(production.inner[index][i]);
+                            }
                         }
-                    } else {
-                        // Epsilon Case + EmitMatch
-                        console.log("Epsilon Case Hit!");
-                        this.emitMatch(production.inner[0][0], "\u03B5");
-                    }
-                } else {                // General Case
-                    for (var i = 0; i < production.inner[index].length; i++) {
-                        this.emitMatch(production.name, production.inner[index][i]);
-                        this.parse(production.inner[index][i]);
                     }
 
+                    // Check Follow Set for Terminal Symbols
+                    if (production.follow.length) {
+                        // Consume Terminals for Respective Follow Set
+                        for (var terminal in production.follow[index]) {
+                            this.match(production.name, production.follow[index][terminal]);
+                        }
+                    }
 
+                    // Return back to Parent Node of Current Child
+                    if (!epsilon) {
+                        this.cst.ascendTree();
+                    }
+                } else {
+                    // Error Found in Parse -- Exit
+                    return null;
                 }
             }
-
-            // Check Follow Set for Terminal Symbols
-            if (production.follow.length) {
-                // Consume Terminals for Respective Follow Set
-                for (var terminal in production.follow[index]) {
-                    this.match(production.name, production.follow[index][terminal]);
-                }
-            }
-
-            // Return back to Parent Node of Current Child
-            this.cst.ascendTree();
-            
         }
 
         /**
@@ -125,7 +134,7 @@ module CSCompiler {
                         for (var j = 0; j < production.first[i].length; j++) {
                             if (production.first[i][j] == this.tokenStream[this.currentToken].name) {
                                 if (original) {
-                                    if (original == "Statement") {               // Really annoying special case
+                                    if (original == "Statement") {              // Really annoying special case
                                         return [original, "StatementList"]      // regarding when predicting StatementList
                                     } else {                                    // peek is nice because when nothing 
                                         return [original];                      // matches in specific circumstances 
@@ -160,12 +169,11 @@ module CSCompiler {
         /**
          * getRule(productions): int
          * - GetRule is used to determine which Rule our Parser
-         *   needs to follow for a respective production. Based
-         *   on that Productions First Set
-         *   Defaults to Rule 0.
+         *   needs to follow for a respective Production. Based
+         *   on that Productions First Set. Defaults to 0
          */
         public getRule(first) {
-            var rule = 0; // Default Case
+            var rule = 0;
             
             // Only Seek for Correct Rule if Production conatins multiple rules
             if (first.length) {
@@ -226,8 +234,6 @@ module CSCompiler {
 
                 // Consume Current Token + Ascend Tree to Parent
                 this.tokenStream.shift()
-                //console.log("Match Calling Ascend: " + expected);
-                //this.cst.ascendTree();
             } else {
                // emitError for incorrect Token
                this.emitError(expected); 
@@ -240,6 +246,7 @@ module CSCompiler {
          *   for Log Output.
          */
         public emitMatch(expected, production?) {
+            // Determine Output Structure based on Production or Token Flag
             if (production) {
                 _Log.output({level: "DEBUG", data: {expected: expected, 
                     found: production, 
@@ -259,15 +266,21 @@ module CSCompiler {
          *   generating our message object for Log Output.
          */
         public emitError(expected) {
-            // Format Data Message
-            var data = "Expected [ " + expected + " ], found [ " + this.tokenStream[this.currentToken].value + " ] "
-                        + " on line: " + this.tokenStream[this.currentToken].line 
-                        + " col: " + this.tokenStream[this.currentToken].col;
+            // Check Parsing Flag to prevent output of Additional Messages after initial Error
+            if (this.parsing) {
+                // Format Data Message
+                var data = "Expected [ " + expected + " ], found [ " + this.tokenStream[this.currentToken].value + " ] "
+                + " on line: " + this.tokenStream[this.currentToken].line 
+                + " col: " + this.tokenStream[this.currentToken].col;
 
-            // Update Error List + Output to User
-            this.errors.push({expected: expected, value: this.tokenStream[this.currentToken].value, 
-                line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col})
-            _Log.output({level: "ERROR", data: data});
+                // Update Error List + Output to User
+                this.errors.push({expected: expected, value: this.tokenStream[this.currentToken].value, 
+                    line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col})
+                _Log.output({level: "ERROR", data: data});
+
+                // Update Parsing Flag
+                this.parsing = false;
+            }
         }
     }
 }
