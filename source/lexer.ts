@@ -45,6 +45,9 @@ module CSCompiler {
             var current;
 
             if (this.foundEOP) {  // [Base]
+                // Clean TokenStream before Returning
+                this.tokenStream.filter((token) => { return token.name != "L_COMM" || token.name != "R_COMM"});
+
                 return this.tokenStream;
 
             } else { // [General]
@@ -104,6 +107,9 @@ module CSCompiler {
                         }
                     } 
                 } else {
+                    // Clean TokenStream before emiting Warning
+                    this.tokenStream.filter((token) => { return token.name != "L_COMM" || token.name != "R_COMM"});
+
                     // Check for Special Cases
                     if (this.inQuote || this.inComment) {
                         if (this.inQuote) {
@@ -117,7 +123,10 @@ module CSCompiler {
 
                         // Add End of Program Marker for Current Program
                         _CurrentProgram = _CurrentProgram + "$";
+                        this.emitToken(this.generateToken("EOP", "$"));
                     }
+
+                    return this.tokenStream;
                 }
             } 
         }

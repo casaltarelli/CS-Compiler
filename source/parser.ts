@@ -103,7 +103,7 @@ module CSCompiler {
                     }
 
                     // Return back to Parent Node of Current Child
-                    if (!epsilon) {
+                    if (!epsilon || (production.name != "Statement" && production.name != "StatementList")) {
                         this.cst.ascendTree();
                     }
                 } else {
