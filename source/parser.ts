@@ -225,7 +225,7 @@ module CSCompiler {
             }
 
             // Valid Match Found for Token
-            if (match && this.parsing == true) {
+            if (match) {
                 // Create New Node for Terminal
                 this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
 
@@ -233,7 +233,7 @@ module CSCompiler {
                 this.emitMatch(expected);
 
                 // Consume Current Token + Ascend Tree to Parent
-                this.tokenStream.shift()
+                this.tokenStream.shift();
             } else {
                // emitError for incorrect Token
                this.emitError(expected); 
@@ -247,27 +247,29 @@ module CSCompiler {
          */
         public emitMatch(expected, production?) {
             // Determine Output Structure based on Production or Token Flag
-            if (production) {
-                _Log.output({level: "DEBUG", data: {expected: expected, 
-                    found: production, 
-                    loc: {line: this.tokenStream[this.currentToken].line, 
-                    col: this.tokenStream[this.currentToken].col}}});   
-            } else {
-                _Log.output({level: "DEBUG", data: {expected: expected, 
-                    found: this.tokenStream[this.currentToken].value, 
-                    loc: {line: this.tokenStream[this.currentToken].line, 
-                    col: this.tokenStream[this.currentToken].col}}});
+            if (this.parsing) {
+                if (production) {
+                    _Log.output({level: "DEBUG", data: {expected: expected, 
+                        found: production, 
+                        loc: {line: this.tokenStream[this.currentToken].line, 
+                        col: this.tokenStream[this.currentToken].col}}});   
+                } else {
+                    _Log.output({level: "DEBUG", data: {expected: expected, 
+                        found: this.tokenStream[this.currentToken].value, 
+                        loc: {line: this.tokenStream[this.currentToken].line, 
+                        col: this.tokenStream[this.currentToken].col}}});
+                }
             }
         }
 
         /**
-         * emitError(type, value)
+         * emitError(expected)
          * - EmitError handles the creation of our Error Entry and
          *   generating our message object for Log Output.
          */
         public emitError(expected) {
             // Check Parsing Flag to prevent output of Additional Messages after initial Error
-            if (this.parsing == true) {
+            if (this.parsing) {
                 // Update Parsing Flag
                 this.parsing = false;
 

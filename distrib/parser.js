@@ -225,7 +225,7 @@ var CSCompiler;
                 match = true;
             }
             // Valid Match Found for Token
-            if (match && this.parsing == true) {
+            if (match) {
                 // Create New Node for Terminal
                 this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
                 // Output to Log for Successful Match
@@ -245,27 +245,29 @@ var CSCompiler;
          */
         Parser.prototype.emitMatch = function (expected, production) {
             // Determine Output Structure based on Production or Token Flag
-            if (production) {
-                _Log.output({ level: "DEBUG", data: { expected: expected,
-                        found: production,
-                        loc: { line: this.tokenStream[this.currentToken].line,
-                            col: this.tokenStream[this.currentToken].col } } });
-            }
-            else {
-                _Log.output({ level: "DEBUG", data: { expected: expected,
-                        found: this.tokenStream[this.currentToken].value,
-                        loc: { line: this.tokenStream[this.currentToken].line,
-                            col: this.tokenStream[this.currentToken].col } } });
+            if (this.parsing) {
+                if (production) {
+                    _Log.output({ level: "DEBUG", data: { expected: expected,
+                            found: production,
+                            loc: { line: this.tokenStream[this.currentToken].line,
+                                col: this.tokenStream[this.currentToken].col } } });
+                }
+                else {
+                    _Log.output({ level: "DEBUG", data: { expected: expected,
+                            found: this.tokenStream[this.currentToken].value,
+                            loc: { line: this.tokenStream[this.currentToken].line,
+                                col: this.tokenStream[this.currentToken].col } } });
+                }
             }
         };
         /**
-         * emitError(type, value)
+         * emitError(expected)
          * - EmitError handles the creation of our Error Entry and
          *   generating our message object for Log Output.
          */
         Parser.prototype.emitError = function (expected) {
             // Check Parsing Flag to prevent output of Additional Messages after initial Error
-            if (this.parsing == true) {
+            if (this.parsing) {
                 // Update Parsing Flag
                 this.parsing = false;
                 // Format Data Message
