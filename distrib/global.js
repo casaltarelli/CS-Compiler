@@ -13,14 +13,18 @@ var APP_NAME = "CSCompiler";
 var APP_VERSION = "0.1";
 var _Stage = "Lexer"; // Preset to Lexer for first stage of Compilation
 var _PID = 1; // ID for Current Program
+var _Verbose = true;
 // Compiler 
 var _Compiler;
 var _TokenStream = [];
+var _CST;
 var _CurrentProgram;
 // Logger
 var _Log;
 // Lexer
 var _Lexer;
+// Parser
+var _Parser;
 // OnLoad
 var onDocumentLoad = function () {
     // Instantiate our Compiler

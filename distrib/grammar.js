@@ -22,8 +22,8 @@ var _Grammar = [
     { priority: 1, name: "R_BRACE", regex: /^\}/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "L_PARAN", regex: /^\(/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
     { priority: 1, name: "R_PARAN", regex: /^\)/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); } },
-    { priority: 1, name: "L_COMM", regex: /^\/\*/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = true; } },
-    { priority: 1, name: "R_COMM", regex: /^\*\//, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = false; } },
+    { priority: 1, name: "L_COMM", regex: /^\/\*/, action: function (lexeme) { _Lexer.tokenStream.push(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = true; } },
+    { priority: 1, name: "R_COMM", regex: /^\*\//, action: function (lexeme) { _Lexer.tokenStream.push(_Lexer.generateToken(this.name, lexeme)); _Lexer.inComment = false; } },
     { priority: 1, name: "QUOTE", regex: /^"/, action: function (lexeme) { _Lexer.emitToken(_Lexer.generateToken(this.name, lexeme)); _Lexer.inQuote = _Lexer.inQuote ? false : true; } },
     { priority: 0, name: "BREAK", regex: /^\n/, action: function (lexeme) {
             if (!_Lexer.inQuote) {

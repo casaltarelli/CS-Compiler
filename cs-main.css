@@ -53,7 +53,7 @@ body {
 
 /* -- Menu */
 .main-menu {
-    width: 100vw;
+    width: 100%;
     padding-top: 50px;
     text-align: left;
 
@@ -89,7 +89,29 @@ body {
     position: relative;
     display: inline-block;
 
+    background-color: #F7F6FB;
+
     transition: all 0.6s;
+}
+
+#btn-tests:hover {
+    background-color: #D8D8D8;
+}
+
+#verbose-toggle {
+    width: 100px;
+    background-color: #F7F6FB;
+    border: 2px solid #38B000;
+
+    transition: all 0.6s;
+}
+
+#verbose-toggle:hover {
+    background-color: #D8D8D8;
+}
+
+#verbose-toggle:focus {
+    outline: none;
 }
 
 /* -- Compiler */
@@ -251,7 +273,7 @@ body {
     padding: 1rem;
     border-radius: 3px;
     opacity: 0;
-    overflow-y: auto;
+    overflow-y: none;
     visibility: hidden;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     backface-visibility: hidden;
@@ -268,6 +290,62 @@ body {
 .tests-list-container {
     height: 100px;
     overflow: scroll;
+}
+
+.test-types-menu {
+    width: 200px;
+    height: 35px;
+
+    display: table;
+    list-style: none;
+
+    margin: 0 auto !important;
+}
+
+.test-types-menu li {
+    display: table-cell;
+    text-align: center;
+    margin: 0 auto !important;
+}
+
+.test-types-menu li a {
+    display: block;
+    color: #606060;
+
+    font-family: "Helvetica Neue Medium";
+    font-size: 12px;
+    letter-spacing: 1px;
+
+    text-decoration: none;
+    border-color: #FFBB5C;
+
+    transition: all 0.6s;
+}
+
+.test-types-menu li a:hover {
+    border-bottom: 1px solid #FFBB5C;
+    color: #000000;
+}
+
+#LEX {
+    border-bottom: 1px solid #FFBB5C;
+    color: #000000;
+}
+
+#LEX-cases {
+    display: block;
+}
+
+#PAR-cases {
+    display: none;
+}
+
+#SMA-cases {
+    display: none;
+}
+
+.test-list {
+    margin-left: 0 !important;
 }
 
 .test-list li {
@@ -355,7 +433,8 @@ body {
 .modal-close-active {
     transform: translateY(10px);
     opacity: 1;    
-}  
+} 
+
 /* - Mobile Styling */
 @media only screen and (max-width: 39.9375em) {
     .modal {
@@ -373,4 +452,4 @@ body {
     .modal-close {
         right: 20px !important;
     }
-} 
+}

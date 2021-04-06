@@ -48,17 +48,32 @@ var CSCompiler;
          *   properly format data to our User.
          */
         Logger.prototype.output = function (msg) {
+            // Validate Verbose Mode
+            if (!_Verbose && msg.level != "INFO") {
+                console.log("Case hit!");
+                return;
+            }
             // Determine Msg Type for Output Formatting
             switch (msg.level) {
                 case "INFO":
                     this.log.value += "INFO - " + msg.data + "\n";
                     break;
                 case "DEBUG":
-                    this.log.value += "DEBUG - " + _Stage
-                        + " - " + msg.data.token.name
-                        + " [ " + msg.data.token.value + " ] "
-                        + " at line: " + msg.data.loc.line
-                        + " col: " + msg.data.loc.col + "\n";
+                    // Format DEBUG Message Depending on Stage
+                    if (_Stage == "Lexer") {
+                        this.log.value += "DEBUG - " + _Stage
+                            + " - " + msg.data.token.name
+                            + " [ " + msg.data.token.value + " ] "
+                            + "at line: " + msg.data.loc.line
+                            + " col: " + msg.data.loc.col + "\n";
+                    }
+                    else if (_Stage == "Parser") {
+                        this.log.value += "DEBUG - " + _Stage
+                            + " - Expecting [ " + msg.data.expected + " ],"
+                            + " found [ " + msg.data.found + " ] "
+                            + "on line: " + msg.data.loc.line
+                            + " col: " + msg.data.loc.col + "\n";
+                    }
                     break;
                 case "WARN":
                     this.log.value += "WARN - " + _Stage + " - " + msg.data + "\n";
@@ -72,13 +87,6 @@ var CSCompiler;
             }
             // Automatically Scroll to Bottom if overflow
             this.log.scrollTop = this.log.scrollHeight;
-        };
-        /**
-         * setMode(m)
-         * - Allows User to decide Log Level for Output.
-         */
-        Logger.prototype.setMode = function (m) {
-            this.mode = m; // Doesn't need to be validated due to hardcoded Param Given
         };
         /**
          * reset()

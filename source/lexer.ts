@@ -18,7 +18,7 @@ module CSCompiler {
                     public foundEOP = false,
                     public program = "") {}
 
-        public init(program: string):void {
+        public init(program: string): void {
             // Announce Lexical Analyzer
             _Log.output({level: "INFO", data: "Starting Lexical Analysis..."});
 
@@ -45,6 +45,9 @@ module CSCompiler {
             var current;
 
             if (this.foundEOP) {  // [Base]
+                // Clean TokenStream before Returning
+                this.tokenStream.filter((token) => { return token.name != "L_COMM" || token.name != "R_COMM"});
+
                 return this.tokenStream;
 
             } else { // [General]
@@ -104,6 +107,9 @@ module CSCompiler {
                         }
                     } 
                 } else {
+                    // Clean TokenStream before emiting Warning
+                    this.tokenStream.filter((token) => { return token.name != "L_COMM" || token.name != "R_COMM"});
+
                     // Check for Special Cases
                     if (this.inQuote || this.inComment) {
                         if (this.inQuote) {
@@ -117,7 +123,10 @@ module CSCompiler {
 
                         // Add End of Program Marker for Current Program
                         _CurrentProgram = _CurrentProgram + "$";
+                        this.emitToken(this.generateToken("EOP", "$"));
                     }
+
+                    return this.tokenStream;
                 }
             } 
         }
@@ -169,7 +178,7 @@ module CSCompiler {
         /**
          * emitError(type, value)
          * - EmitError handles the creation of our Error Entry and
-         *   our generating our message object for Log Output.
+         *   generating our message object for Log Output.
          */
         public emitError(type, value) {
             var data;

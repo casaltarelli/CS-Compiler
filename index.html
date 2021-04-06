@@ -15,9 +15,12 @@
     <!-- Compiler Routines -->
     <script type="text/javascript" src="distrib/logger.js"></script>
     <script type="text/javascript" src="distrib/grammar.js"></script>
+    <script type="text/javascript" src="distrib/productions.js"></script>
     <script type="text/javascript" src="distrib/compiler.js"></script>
     <script type="text/javascript" src="distrib/lexer.js"></script>
     <script type="text/javascript" src="distrib/token.js"></script>
+    <script type="text/javascript" src="distrib/parser.js"></script>
+    <script type="text/javascript" src="distrib/tree.js"></script>
 
 
     <!-- Other Routines -->
@@ -58,8 +61,12 @@
                               <div class="modal-tests-content" id="modal-tests-content-">
                                 <h4 class="section-name">TEST CASES</h4>
                                 <p>Click any of the test cases below.</p>
+                                <ul class="test-types-menu">
+                                    <li><a id="LEX" onclick="show('LEX')">LEX</a></li>
+                                    <li><a id="PAR" onclick="show('PAR')">PAR</a></li>
+                                </ul>
                                 <div class="test-list-container">
-                                    <ul class="test-list">
+                                    <ul id="LEX-cases" class="test-list">
                                         <li><a onclick="_SetTest(0, 'Alans Test')"><span class="success">&#10003 </span>Alan's Test</a></li>
                                         <li><a onclick="_SetTest(1, 'Comment Test')"><span class="success">&#10003 </span>Comment Test</a></li>
                                         <li><a onclick="_SetTest(2, 'Quote Test')"><span class="success">&#10003 </span>Quote Test</a></li>
@@ -70,6 +77,15 @@
                                         <li><a onclick="_SetTest(7, 'Missing Comment Test')"><span class="warning">/ </span>Missing Comment Test</a></li>
                                         <li><a onclick="_SetTest(8, 'Illegal Character Test')"><span class="fail">X </span>Illegal Character Test</a></li>
                                         <li><a onclick="_SetTest(9, 'Reserved Character Test')"><span class="fail">X </span>Reserved Character Test</a></li>
+                                    </ul>
+                                    <ul id="PAR-cases" class="test-list">
+                                        <li><a onclick="_SetTest(10, 'Program Test')"><span class="success">&#10003 </span>Program Test</a></li>
+                                        <li><a onclick="_SetTest(11, 'While Test')"><span class="success">&#10003 </span>While Test</a></li>
+                                        <li><a onclick="_SetTest(12, 'Variable Addition Test')"><span class="success">&#10003 </span>Variable Addition Test</a></li>
+                                        <li><a onclick="_SetTest(13, 'Multiple Programs Test')"><span class="success">&#10003 </span>Multiple Programs Test</a></li> 
+                                        <li><a onclick="_SetTest(14, 'Incomplete IntExpr')"><span class="fail">X </span>Incomplete IntExpr Test</a></li>
+                                        <li><a onclick="_SetTest(15, 'Incomplete Print Test')"><span class="fail">X </span>Incomplete Print Test</a></li>
+                                        <li><a onclick="_SetTest(16, 'Incomplete Block Test')"><span class="fail">X </span>Incomplete Block Test</a></li>
                                     </ul>
                                 </div>
                             </div> <!-- Modal Tests Content -->
@@ -82,6 +98,13 @@
                           value="COMPILE"
                           tabindex="1"
                           onclick="CSCompiler.Compiler.compile();">
+
+                    <input type="button"
+                        id="verbose-toggle"
+                        class="menu-button float-right"
+                        value="VERBOSE"
+                        tabindex="2"
+                        onclick="verboseToggle()">
                </div>
             </div>
         </div>
@@ -93,7 +116,7 @@
                 <div class="editor">
                     <div class="grid-x">
                         <div class="lines cell large-1">
-                            <div class="grid-y grid-frame">
+                            <div class="grid-y grid-frame" style="overflow: hidden;">
                                 <div class="cell line-number">1</div>
                                 <div class="cell line-number">2</div>
                                 <div class="cell line-number">3</div>

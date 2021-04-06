@@ -52,6 +52,8 @@ var CSCompiler;
         Lexer.prototype.lex = function (priority) {
             var current;
             if (this.foundEOP) { // [Base]
+                // Clean TokenStream before Returning
+                this.tokenStream.filter(function (token) { return token.name != "L_COMM" || token.name != "R_COMM"; });
                 return this.tokenStream;
             }
             else { // [General]
@@ -106,6 +108,8 @@ var CSCompiler;
                     }
                 }
                 else {
+                    // Clean TokenStream before emiting Warning
+                    this.tokenStream.filter(function (token) { return token.name != "L_COMM" || token.name != "R_COMM"; });
                     // Check for Special Cases
                     if (this.inQuote || this.inComment) {
                         if (this.inQuote) {
@@ -120,7 +124,9 @@ var CSCompiler;
                         this.emitWarning("EOP", "$");
                         // Add End of Program Marker for Current Program
                         _CurrentProgram = _CurrentProgram + "$";
+                        this.emitToken(this.generateToken("EOP", "$"));
                     }
+                    return this.tokenStream;
                 }
             }
         };
@@ -167,7 +173,7 @@ var CSCompiler;
         /**
          * emitError(type, value)
          * - EmitError handles the creation of our Error Entry and
-         *   our generating our message object for Log Output.
+         *   generating our message object for Log Output.
          */
         Lexer.prototype.emitError = function (type, value) {
             var data;
