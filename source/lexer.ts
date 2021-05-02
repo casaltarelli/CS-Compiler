@@ -46,7 +46,7 @@ module CSCompiler {
 
             if (this.foundEOP) {  // [Base]
                 // Clean TokenStream before Returning
-                this.tokenStream.filter((token) => { return token.name != "L_COMM" || token.name != "R_COMM"});
+                this.tokenStream = this.tokenStream.filter((token) => { return token.name != "L_COMM" && token.name != "R_COMM"});
 
                 return this.tokenStream;
 
@@ -108,7 +108,7 @@ module CSCompiler {
                     } 
                 } else {
                     // Clean TokenStream before emiting Warning
-                    this.tokenStream.filter((token) => { return token.name != "L_COMM" || token.name != "R_COMM"});
+                    this.tokenStream = this.tokenStream.filter((token) => { return token.name != "L_COMM" && token.name != "R_COMM"});
 
                     // Check for Special Cases
                     if (this.inQuote || this.inComment) {

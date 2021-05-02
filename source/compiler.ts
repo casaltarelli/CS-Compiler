@@ -36,62 +36,82 @@ module CSCompiler {
                 _PID = 1;
                 _TokenStream = [];
 
-                out:
                 // Iterate over all Programs
-                for (var program in source) {
+                for (var program = 0; program < source.length; program++) {
                     // Update Current Program + Reset Stage
                     _CurrentProgram = source[program];
-                    _Stage = "Lexer";
 
                     // Announce Compilation Start
                     _Log.output({level: "", data: "--------------------"});
                     _Log.output({level: "", data: "Compiling Program " + _PID + "\n"});
 
-                    // Init Lexer for New Token Stream
-                    _Lexer.init(_CurrentProgram);
+                    out:
+                    for (var s in _Stages) {
+                        // Update Stage
+                        _Stage = _Stages[s];
 
-                    // Get Token Stream
-                    _Lexer.lex(0);
-                    _TokenStream.push(_Lexer.tokenStream);
+                        switch(_Stage) {
+                            case "Lexer":
+                                // Init Lexer for Program + Generate Token Stream
+                                _Lexer.init(_CurrentProgram);
+                                _Lexer.lex(0);
 
-                    // Announce Stage Completion for Respective Process + Results
-                    _Log.output({level: "INFO", data: "Lexical Analysis Complete. " + _Lexer.warnings.length + " WARNING(S) and " 
-                        + _Lexer.errors.length + " ERROR(S)\n"});
+                                // Announce Completion
+                                _Log.output({level: "INFO", data: "Lexical Analysis Complete. " + _Lexer.warnings.length + " WARNING(S) and " 
+                                + _Lexer.errors.length + " ERROR(S)\n"});
 
-                    if (_Lexer.errors.length > 0) {
-                        _Log.output({level: "", data: "--------------------"});
-                        _Log.output({level: "INFO", data: "Compliation Stopped due to Lexer errors..."});
-                        break out;
+                                // Validate Successful Lex -- Output Compilation Stopped for Program
+                                if (_Lexer.errors.length > 0) {
+                                    _Log.output({level: "", data: "--------------------"});
+                                    _Log.output({level: "INFO", data: "Compliation Stopped due to Lexer errors..."});
+                                    break out; 
+                                } else {
+                                    // Add Validated Token Stream to Global Reference
+                                    _TokenStream.push(_Lexer.tokenStream);  
+                                }
+                                break;
+                            
+                            case "Parser":
+                                // Init Parse for New Stream + Get CST
+                                _Parser.init(_TokenStream[program]);
+                                _Parser.parse("Program");
+
+                                // Announce Completion
+                                _Log.output({level: "INFO", data: "Parse Complete. " + _Parser.errors.length + " ERROR(S)\n"});
+
+                                // Validate Successful Parse -- Output Compilation Stopped for Program
+                                if (_Parser.errors.length > 0) {
+                                    _Log.output({level: "", data: "--------------------"});
+                                    _Log.output({level: "INFO", data: "Compliation Stopped due to Parser errors..."});
+                                    break out;   
+                                } else {
+                                    // Add Validated CST to Global Reference
+                                    _CSTs.push(_Parser.cst);
+
+                                    // Output CST to Log
+                                    _Log.output({level: "", data: "Concrete-Syntax Tree generated for program " + _PID + "\n" });
+                                    _Log.output({level: "", data: _Parser.cst.toString()});
+                                }
+                                break;
+                                
+                            case "Semantic Analysis":
+                                _Log.output({level: "", data: "Semantic Analysis Stage Recognized!"});
+                                break;
+
+                            default:
+                                // This should never happen, but you never know for sure
+                                console.log("Compilation Exception -- Invalid Stage for processing");
+                                break;
+                        }
                     }
 
-                    // Update Stage
-                    _Stage = "Parser";
-                    
-                    // Init Parser for New CST
-                    _Parser.init(_TokenStream[program]);
-
-                    // Generate CST
-                    _Parser.parse("Program");
-
-                    // Announce Stage Completion for Respective Process + Results
-                    _Log.output({level: "INFO", data: "Parse Complete. " + _Parser.errors.length + " ERROR(S)\n"});
-
-                    if (_Parser.errors.length > 0) {
-                        _Log.output({level: "", data: "--------------------"});
-                        _Log.output({level: "INFO", data: "Compliation Stopped due to Parser errors..."});
-                        break out;
-                    } 
-
-                    // Output CST Generated from Parse
-                    _Log.output({level: "", data: "Concrete-Syntax Tree generated for program " + _PID + "\n" });
-                    _Log.output({level: "", data: _Parser.cst.toString()});
-
-                    // Increment PID
-                    _PID++; 
+                    // Increment PID for next program
+                    _PID++;
                 }
 
+                // Announce Completion for Compiling Program(s)
                 _Log.output({level: "", data: "--------------------"});
-                _Log.output({level: "INFO", data: "Completion of Program(s) completed."});
+                _Log.output({level: "INFO", data: "Compilation of Program(s) completed."});
             }
         }
     }

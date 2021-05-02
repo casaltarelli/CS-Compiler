@@ -11,20 +11,23 @@
 //
 var APP_NAME = "CSCompiler";
 var APP_VERSION = "0.1";
+var _Stages = ["Lexer", "Parser", "Semantic Analysis"];
 var _Stage = "Lexer"; // Preset to Lexer for first stage of Compilation
 var _PID = 1; // ID for Current Program
 var _Verbose = true;
 // Compiler 
 var _Compiler;
-var _TokenStream = [];
 var _CST;
 var _CurrentProgram;
 // Logger
 var _Log;
 // Lexer
 var _Lexer;
+var _TokenStream = [];
 // Parser
 var _Parser;
+var _CSTs = [];
+// Semantic Analyzer
 // OnLoad
 var onDocumentLoad = function () {
     // Instantiate our Compiler

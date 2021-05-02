@@ -53,7 +53,7 @@ var CSCompiler;
             var current;
             if (this.foundEOP) { // [Base]
                 // Clean TokenStream before Returning
-                this.tokenStream.filter(function (token) { return token.name != "L_COMM" || token.name != "R_COMM"; });
+                this.tokenStream = this.tokenStream.filter(function (token) { return token.name != "L_COMM" && token.name != "R_COMM"; });
                 return this.tokenStream;
             }
             else { // [General]
@@ -109,7 +109,7 @@ var CSCompiler;
                 }
                 else {
                     // Clean TokenStream before emiting Warning
-                    this.tokenStream.filter(function (token) { return token.name != "L_COMM" || token.name != "R_COMM"; });
+                    this.tokenStream = this.tokenStream.filter(function (token) { return token.name != "L_COMM" && token.name != "R_COMM"; });
                     // Check for Special Cases
                     if (this.inQuote || this.inComment) {
                         if (this.inQuote) {
