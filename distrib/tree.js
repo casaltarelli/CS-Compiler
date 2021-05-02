@@ -24,12 +24,13 @@ var CSCompiler;
          *   to our Trees. Type is used to determine if we
          *   are dealing with a leaf (terminal) or branch (non-terminal).
          */
-        Tree.prototype.addNode = function (name, type) {
+        Tree.prototype.addNode = function (type, name, data) {
             // Create Node Object
             var node = {
                 name: name,
                 children: [],
-                parent: {}
+                parent: {},
+                data: { line: data.line, col: data.col }
             };
             // Check if New Node is Root
             if (!this.root) {

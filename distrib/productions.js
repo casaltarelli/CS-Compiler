@@ -51,4 +51,3 @@ var _Productions = [
     { name: "CHAR", first: [["CHAR"]], follow: [], inner: [] },
     { name: "SPACE", first: [["SPACE"]], follow: [], inner: [] }
 ];
-// ["CHAR"], ["SPACE"]

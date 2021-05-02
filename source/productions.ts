@@ -59,6 +59,4 @@ var _Productions = [
     { name: "DIGIT",                first: [["DIGIT"]],             follow: [],             inner: [] },
     { name: "CHAR",                 first: [["CHAR"]],              follow: [],             inner: [] },
     { name: "SPACE",                first: [["SPACE"]],             follow: [],             inner: [] }
-]
-
-// ["CHAR"], ["SPACE"]
+];

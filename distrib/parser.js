@@ -51,10 +51,14 @@ var CSCompiler;
                 if (this.parsing) {
                     // Create new Node for Non-Terminal
                     if (!production.peek) {
-                        this.cst.addNode(production.name, "branch");
+                        this.cst.addNode("branch", production.name, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
                     }
                     else if (this.peek(production.inner[index]) != null) {
-                        this.cst.addNode(production.name, "branch");
+                        this.cst.addNode("branch", production.name, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
+                    }
+                    else {
+                        this.emitMatch(production.name, "\u03B5");
+                        return;
                     }
                     // Check First Set for Terminal Symbols
                     if (production.first.length) {
@@ -227,7 +231,7 @@ var CSCompiler;
             // Valid Match Found for Token
             if (match) {
                 // Create New Node for Terminal
-                this.cst.addNode(this.tokenStream[this.currentToken].value, "leaf");
+                this.cst.addNode("leaf", this.tokenStream[this.currentToken].value, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
                 // Output to Log for Successful Match
                 this.emitMatch(expected);
                 // Consume Current Token + Ascend Tree to Parent
