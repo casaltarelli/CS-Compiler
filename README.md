@@ -37,7 +37,7 @@ A Few Notes
 ===========
 
 **Prof. Labouseur**
-Please grade my Project One on the master branch of this project.
+Please grade my Project Two on the main branch of this project. Safari seems to hate assertions (working on that one), please run my project in [Google Chrome](https://www.google.com/chrome/) to avoid any issues. 
 
 **TypeScript Resources**
 [Right this way!](http://www.typescriptlang.org/)
