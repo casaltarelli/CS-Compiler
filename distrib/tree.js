@@ -27,10 +27,12 @@ var CSCompiler;
         Tree.prototype.addNode = function (type, name, data) {
             // Create Node Object
             var node = {
+                type: type,
                 name: name,
                 children: [],
                 parent: {},
-                data: { line: data.line, col: data.col }
+                data: data,
+                visited: false
             };
             // Check if New Node is Root
             if (!this.root) {
@@ -42,7 +44,7 @@ var CSCompiler;
                 node.parent = this.current;
                 this.current.children.push(node);
                 // Validate Type to determine if we need to update our Current
-                if (type == "branch") {
+                if (type == "Non-Terminal") {
                     // Update Current Pointer
                     this.current = node;
                 }
@@ -81,16 +83,16 @@ var CSCompiler;
                 for (var i = 0; i < depth; i++) {
                     data += "-";
                 }
-                // Check if Node contains Children   [Leaf]
+                // Check if Node contains Children   [Terminal]
                 if (node.children.length) {
-                    // Add Leaf Node to Data
+                    // Add Terminal Node to Data
                     data += "<" + node.name + ">\n";
-                    // Recursively Expand Leafs
+                    // Recursively Expand Non-Terminals + Terminals
                     for (var i = 0; i < node.children.length; i++) {
                         expand(node.children[i], depth + 1);
                     }
                 }
-                else { //                         [Branch]
+                else { //                         [Non-Terminal]
                     data += "[" + node.name + "]\n";
                 }
             }

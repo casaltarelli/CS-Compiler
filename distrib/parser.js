@@ -51,12 +51,13 @@ var CSCompiler;
                 if (this.parsing) {
                     // Create new Node for Non-Terminal
                     if (!production.peek) {
-                        this.cst.addNode("branch", production.name, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
+                        this.cst.addNode("Non-Terminal", production.name, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
                     }
                     else if (this.peek(production.inner[index]) != null) {
-                        this.cst.addNode("branch", production.name, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
+                        this.cst.addNode("Non-Terminal", production.name, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
                     }
                     else {
+                        // Emit Epsilon Match for Production -- Return
                         this.emitMatch(production.name, "\u03B5");
                         return;
                     }
@@ -231,7 +232,7 @@ var CSCompiler;
             // Valid Match Found for Token
             if (match) {
                 // Create New Node for Terminal
-                this.cst.addNode("leaf", this.tokenStream[this.currentToken].value, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
+                this.cst.addNode("Terminal", this.tokenStream[this.currentToken].value, { line: this.tokenStream[this.currentToken].line, col: this.tokenStream[this.currentToken].col });
                 // Output to Log for Successful Match
                 this.emitMatch(expected);
                 // Consume Current Token + Ascend Tree to Parent
