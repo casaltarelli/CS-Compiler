@@ -31,6 +31,7 @@ var CSCompiler;
             this.errors = [];
             this.ast = new CSCompiler.Tree();
             // Productions Lists
+            this.operators = _Productions.filter(function (op) { return op.name.indexOf("Op") !== -1; });
         };
         /**
          * build(node)
@@ -43,60 +44,66 @@ var CSCompiler;
             var operationFlag = false;
             // Update Visited Flag 
             node.visited = true;
-            // TODO: Add Essential Attribute to Essential Productions
-            // var productions = _Productions.filter(p => { p.essential });
-            var productions = _Productions;
-            // Check if Node is Essential
-            for (var p in productions) {
-                if (node.name == productions[p].name) {
-                    essentialFlag = true;
-                    // Check if Node has Operator Child [Expr Special Case]
-                    var operationIndex = 0;
-                    for (var i = 0; i < node.children.length; i++) {
-                        if (this.operators.map(function (o) { return o.name; }).indexOf(node.children[i].name) > -1) {
-                            operationFlag = true;
-                            operationIndex = i;
+            // Get Production Reference 
+            var production = _Productions.filter(function (production) { return production.name == node.name; })[0];
+            // Check if current Node is an Essential Production
+            if (production.essential) {
+                // Update Essential Flag
+                essentialFlag = true;
+                // Check if Node has Operator Child [Expr Special Case]
+                var operationIndex = 0;
+                for (var i = 0; i < node.children.length; i++) {
+                    if (this.operators.map(function (o) { return o.name; }).indexOf(node.children[i].name) > -1) {
+                        operationFlag = true;
+                        operationIndex = i;
+                    }
+                }
+                if (!operationFlag) {
+                    // Add Node to AST Definition + Update Visited Flag
+                    node.visited = true;
+                    this.ast.addNode("Non-Terminal", node.name, { line: node.data.line, col: node.data.col });
+                    // Check for Node "Block" -- Update Symbol Table Scope
+                    if (node.name == "Block") {
+                        console.log("Create new Symbol Table");
+                    }
+                }
+                // Check if Production requires us to collect Terminal(s) or SubTree
+                if (production.seek) {
+                    if (operationFlag) {
+                        //this.seekTree(node, operationIndex);
+                    }
+                    else {
+                        //var set = this.seekTerminal(node, [], true);
+                        var set;
+                        if (production.seek == "Child") {
+                            // Collect Accurate Location for new Single Node
+                            var line = set[0].data.line;
+                            var col = set[0].data.col;
+                            // Combine Set to Single Node [CharList Case]
+                            set = set.map(function (n) { return n.name; }).reduce();
+                            // Add Terminal to AST Defintion
+                            this.ast.addNode("Terminal", set, { line: line, col: col });
+                            // TODO: Implement Symbol Table Entry Here
+                        }
+                        else {
+                            for (var terminal in set) {
+                                this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
+                            }
+                            // TODO: Implement Symbol Table Entry Here
                         }
                     }
-                    if (!operationFlag) {
-                        // Add Node to AST Definition
-                        this.ast.addNode("Non-Terminal", node.name, { line: node.data.line, col: node.data.col });
-                        // Check for Node "Block" -- Update Symbol Table Scope
-                        if (node.name == "Block") {
-                            this.scope++; // Increment Scope for New Block
-                            // TODO: New Symbol Table Creation
-                            // this.symbolTable.addSymbolNode("Table", this.scope)
-                        }
-                    }
-                    // Check if Production requires us to collect Terminals or Subtree
-                    // TODO: Add Seek Flag to Essential Productions
-                    // if (productions[p].seek) {
-                    //     if (operationFlag) {
-                    //         //this.seekTree(node, operationIndex);
-                    //     } else {
-                    //         var set = this.seekTerminal(node, [], true);
-                    //         if (productions[p].seek == "child") {
-                    //             set = set.map(n => n.name).reduce();
-                    //             this.ast.addNode("Terminal", set, {line: node.data.line, col: node.data.col});
-                    //             // TODO: Symbol Table Variable Entry
-                    //         } else {
-                    //             for (var terminal in set) {
-                    //                 this.ast.addNode("Terminal", set[terminal].name, {line: set[terminal].data.line, col: set[terminal].data.line});
-                    //             }
-                    //             // TODO: Symbol Table Variable Entry
-                    //         }
-                    //     }
-                    // }
                 }
             }
             // Proceed to Children for current Node
             for (var child in node.children) {
-                this.build(node.children[child]);
+                if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
+                    this.build(node.children[child]);
+                }
             }
-            // If essential found ascendTree
-            if (essentialFlag) {
-                this.ast.ascentTree();
-            }
+            // // If essential found ascendTree
+            // if (essentialFlag) {
+            //     this.ast.ascentTree();
+            // }
         };
         return SemanticAnalyzer;
     }());

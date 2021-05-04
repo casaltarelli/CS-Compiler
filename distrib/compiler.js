@@ -85,9 +85,9 @@ var CSCompiler;
                             case "Semantic Analysis":
                                 // Init Semantic Analyzer for AST + Semantic Analysis
                                 _SemanticAnalyzer.init(_CSTs[program]);
-                                _SemanticAnalyzer.build(_SemanticAnalyzer.cst);
+                                _SemanticAnalyzer.build(_SemanticAnalyzer.cst.root);
                                 // Announce Completion
-                                _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _Parser.errors.length + " ERROR(S)\n" });
+                                _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.errors.length + " ERROR(S)\n" });
                                 // TODO: Implement Error Message + Update to _AST list
                                 // TODO: Add AST Output to Log
                                 break;

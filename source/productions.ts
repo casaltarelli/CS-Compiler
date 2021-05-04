@@ -28,25 +28,25 @@
 
 var _Productions = [
     { name: "Program",              first: [],                      follow: [["EOP"]],      inner: [["Block"]] },
-    { name: "Block",                first: [["L_BRACE"]],           follow: [["R_BRACE"]],  inner: [["StatementList"]] },
+    { name: "Block",                first: [["L_BRACE"]],           follow: [["R_BRACE"]],  inner: [["StatementList"]], essential: true },
     { name: "StatementList",        first: [],                      follow: [],             inner: [["Statement", "StatementList"]], peek: true  }, // Peek
 
     { name: "Statement",            first: [],                      follow: [],      
             inner: [["Block", "PrintStatement", "WhileStatement", "IfStatement", "AssignmentStatement", "VarDecl"]], peek: true }, // Peek
 
-    { name: "PrintStatement",       first: [["PRINT", "L_PARAN"]],  follow: [["R_PARAN"]],  inner: [["Expr"]] },
-    { name: "AssignmentStatement",  first: [["ID", "ASSIGN_OP"]],   follow: [],             inner: [["Expr"]] },
-    { name: "VarDecl",              first: [],                      follow: [],             inner: [["Type", "ID"]] },
-    { name: "WhileStatement",       first: [["WHILE"]],             follow: [],             inner: [["BooleanExpr", "Block"]] },
-    { name: "IfStatement",          first: [["IF"]],                follow: [],             inner: [["BooleanExpr", "Block"]] },
+    { name: "PrintStatement",       first: [["PRINT", "L_PARAN"]],  follow: [["R_PARAN"]],  inner: [["Expr"]], essential: true, seek: "Child" },
+    { name: "AssignmentStatement",  first: [["ID", "ASSIGN_OP"]],   follow: [],             inner: [["Expr"]], essential: true, seek: "Children" },
+    { name: "VarDecl",              first: [],                      follow: [],             inner: [["Type", "ID"]], essential: true, seek: "Children" },
+    { name: "WhileStatement",       first: [["WHILE"]],             follow: [],             inner: [["BooleanExpr", "Block"]], essential: true },
+    { name: "IfStatement",          first: [["IF"]],                follow: [],             inner: [["BooleanExpr", "Block"]], essential: true },
 
     { name: "Expr",                 first: [],                      follow: [],            
             inner: [["IntExpr", "StringExpr", "BooleanExpr", "ID"]], peek: true }, // Peek
 
-    { name: "IntExpr",              first: [["DIGIT", "INT_OP"], ["DIGIT"]], follow: [],    inner: [["Expr"], []]},
+    { name: "IntExpr",              first: [["DIGIT", "INT_OP"], ["DIGIT"]], follow: [],    inner: [["Expr"], []], essential: true},
 
-    { name: "StringExpr",           first: [["QUOTE"]],             follow: [["QUOTE"]],    inner: [["CharList"]] },
-    { name: "BooleanExpr",          first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []],inner: [["Expr", "BoolOp", "Expr"], []] },
+    { name: "StringExpr",           first: [["QUOTE"]],             follow: [["QUOTE"]],    inner: [["CharList"]], essential: true },
+    { name: "BooleanExpr",          first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []],inner: [["Expr", "BoolOp", "Expr"], []], essential: true },
 
     { name: "ID",                   first: [["ID"]],                follow: [],             inner: [] },
     { name: "CharList",             first: [["CHAR"], ["SPACE"]],     follow: [],             inner: [["CharList"], ["CharList"]], peek: true }, // Peek
