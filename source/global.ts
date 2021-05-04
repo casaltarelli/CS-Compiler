@@ -35,6 +35,7 @@ var _Parser: CSCompiler.Parser;
 var _CSTs = [];
 
 // Semantic Analyzer
+var _SemanticAnalyzer: CSCompiler.SemanticAnalyzer;
 
 // OnLoad
 var onDocumentLoad = function() {

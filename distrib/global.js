@@ -28,6 +28,7 @@ var _TokenStream = [];
 var _Parser;
 var _CSTs = [];
 // Semantic Analyzer
+var _SemanticAnalyzer;
 // OnLoad
 var onDocumentLoad = function () {
     // Instantiate our Compiler

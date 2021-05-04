@@ -27,6 +27,7 @@ var CSCompiler;
             // Initalize Compilation Stages
             _Lexer = new CSCompiler.Lexer();
             _Parser = new CSCompiler.Parser();
+            _SemanticAnalyzer = new CSCompiler.SemanticAnalyzer();
             // Validate Input from User
             if (source) {
                 // Reset PID + TokenStream for new compilation
@@ -82,7 +83,13 @@ var CSCompiler;
                                 }
                                 break;
                             case "Semantic Analysis":
-                                _Log.output({ level: "", data: "Semantic Analysis Stage Recognized!" });
+                                // Init Semantic Analyzer for AST + Semantic Analysis
+                                _SemanticAnalyzer.init(_CSTs[program]);
+                                _SemanticAnalyzer.build(_SemanticAnalyzer.cst);
+                                // Announce Completion
+                                _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _Parser.errors.length + " ERROR(S)\n" });
+                                // TODO: Implement Error Message + Update to _AST list
+                                // TODO: Add AST Output to Log
                                 break;
                             default:
                                 // This should never happen, but you never know for sure
