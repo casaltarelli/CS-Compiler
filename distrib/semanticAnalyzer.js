@@ -105,6 +105,36 @@ var CSCompiler;
             //     this.ast.ascentTree();
             // }
         };
+        /**
+         * seekTerminal(node, set, first?)
+         * - seekTerminal has the ability to traverse through our
+         *   CST definition from Parse and collect all Terminal Nodes
+         *   under the node given from our CST.
+         */
+        SemanticAnalyzer.prototype.seekTerminal = function (node, set, first) {
+            // First is used to avoid collecting Terminals that are a direct child of the Essential Production
+            if (first) {
+                for (var child in node.children) {
+                    if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
+                        set.push(this.seekTerminal(node.children[child], set));
+                    }
+                }
+            }
+            else {
+                // We are already past the first set of children, collect all Terminal Nodes found
+                for (var child in node.children) {
+                    if (node.children[child].type == "Non-Terminal" && !(node.children[child].visted)) {
+                        node.visited = true;
+                        set.push(this.seekTerminal(node.children[child], set));
+                    }
+                    else if (!(node.children[child].visited)) {
+                        node.visited = true;
+                        set.push(node.children[child]);
+                    }
+                }
+            }
+            return set;
+        };
         return SemanticAnalyzer;
     }());
     CSCompiler.SemanticAnalyzer = SemanticAnalyzer;
