@@ -48,7 +48,7 @@ var _Productions = [
 
     { name: "IntExpr",              first: [["DIGIT", "INT_OP"], ["DIGIT"]], follow: [],    inner: [["Expr"], []], essential: true, seek: "Children"},
 
-    { name: "StringExpr",           first: [["QUOTE"]],             follow: [["QUOTE"]],    inner: [["CharList"]], essential: true },
+    { name: "StringExpr",           first: [["QUOTE"]],             follow: [["QUOTE"]],    inner: [["CharList"]], essential: true, seek: "Child" },
     { name: "BooleanExpr",          first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []],inner: [["Expr", "BoolOp", "Expr"], []], essential: true, seek: "Children"},
 
     { name: "ID",                   first: [["ID"]],                follow: [],             inner: [] },
@@ -57,7 +57,7 @@ var _Productions = [
     { name: "Type",                 first: [["INT", "STRING", "BOOLEAN"]], follow: [],      inner: [], ambiguous: true},
     { name: "BoolOp",               first: [["BOOL_OP"]],           follow: [],             inner: [] },
     { name: "BoolVal",              first: [["BOOL_VAL"]],          follow: [],             inner: [] },
-    { name: "IntOp",                first: [["INT_OP"]],            follow: [],             inner: [] },
+    { name: "INT_OP",                first: [["INT_OP"]],            follow: [],             inner: [] },
 
     { name: "DIGIT",                first: [["DIGIT"]],             follow: [],             inner: [] },
     { name: "CHAR",                 first: [["CHAR"]],              follow: [],             inner: [] },

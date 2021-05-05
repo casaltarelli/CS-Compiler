@@ -97,7 +97,7 @@ module CSCompiler {
 
                             case "Semantic Analysis":
                                 // Init Semantic Analyzer for AST + Semantic Analysis
-                                _SemanticAnalyzer.init(_CSTs[program]);
+                                _SemanticAnalyzer.init(_Parser.cst);
                                 _SemanticAnalyzer.build(_SemanticAnalyzer.cst.root);
 
                                 // Announce Completion

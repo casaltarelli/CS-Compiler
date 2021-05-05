@@ -187,18 +187,18 @@ module CSCompiler {
             switch(type) {
                 case "UNDEFINED":
                     if (this.inQuote) {
-                        data = "Invalid Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
+                        data = "Invalid Character in String [ " + value + " ] on line: " + this.line + " col: " + this.col;
                     } else {
-                        data = "Unrecognized or Invalid Token [ " + value + " ] on line " + this.line + " col " + this.col;
+                        data = "Unrecognized or Invalid Token [ " + value + " ] on line: " + this.line + " col: " + this.col;
                     }
                     break;
 
                 case "RESERVED":
-                    data = "Reserved Character in String [ " + value + " ] on line " + this.line + " col " + this.col;
+                    data = "Reserved Character in String [ " + value + " ] on line: " + this.line + " col: " + this.col;
                     break;
 
                 case "BREAK":
-                    data = "Illegal Character in String [ \\n ] on line " + this.line + " col " + this.col;
+                    data = "Illegal Character in String [ \\n ] on line: " + this.line + " col: " + this.col;
                     break;
 
                 default:
