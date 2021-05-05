@@ -51,6 +51,33 @@ var CSCompiler;
             }
         };
         /**
+         * addTableNode(scope)
+         * - AddTableNode allows for us to create a new symbol table
+         *   according to the respective scope we are on while
+         *   producing our AST definitions.
+         */
+        Tree.prototype.addTableNode = function (scope) {
+            // Create Table Node Object
+            var node = {
+                scope: scope,
+                table: new CSCompiler.SymbolTable(),
+                parent: {},
+                children: []
+            };
+            // Check for Root
+            if (!this.root) {
+                this.root = node;
+                this.current = node;
+            }
+            else {
+                // Otherwise, we are dealing with an inner-scope so our Current is the Parent
+                node.parent = this.current;
+                this.current.children.push(node);
+            }
+            // Update Current Pointer for new scope
+            this.current = node;
+        };
+        /**
          * ascendTree()
          * - AscendTree allows for us to move up our
          *   tree definition, by accessing our current
