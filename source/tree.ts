@@ -133,5 +133,38 @@ module CSCompiler {
             // Return String Representation
             return data;
         }
+
+        public toStringTable(node) {
+            // Initalize Data for Symbol Table(s)
+            var data = "";
+
+            // Create Symbol Table Header
+            data += "\n-------------------------\n";
+            data += "       Scope: " + node.scope + "\n";
+            data += "-------------------------\n";
+
+            // Output Table
+            data += "Key | Type | Scope | Line | Col\n";
+
+            for (var i = 0; i < node.table.keys.length; i++) {
+                var key = node.table.keys[i];
+                var type = node.table.values[i].type;
+                var scope = node.scope;
+                var line = node.table.values[i].declared.line;
+                var col = node.table.values[i].declared.col;
+
+                data+= key + "  " + type + " " + scope + " " + line + " " + col + "\n\n";
+            }
+
+            if (node.children) {
+                for (var child in node.children) {
+                    data += node[child].toStringTable;
+                }
+            }
+
+            
+
+            
+        }
     }
 }
