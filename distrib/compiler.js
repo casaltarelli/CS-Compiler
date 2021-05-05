@@ -90,6 +90,8 @@ var CSCompiler;
                                 _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.errors.length + " ERROR(S)\n" });
                                 // TODO: Implement Error Message + Update to _AST list
                                 // TODO: Add AST Output to Log
+                                _Log.output({ level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
+                                _Log.output({ level: "", data: _SemanticAnalyzer.ast.toString() });
                                 break;
                             default:
                                 // This should never happen, but you never know for sure

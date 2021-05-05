@@ -2,6 +2,7 @@
     SemanticAnalysis.ts
 
     The Semantic Analyzer is used to generate an Abstract Syntax Tree from our Concrete Syntax Tree that was created in Parse.
+    Once our AST has been generated, we then execute a pre-order traversal to find any warnings/errors for Semantic Analysis.
 
 ----- */
 var CSCompiler;
@@ -58,38 +59,37 @@ var CSCompiler;
                         operationIndex = i;
                     }
                 }
-                if (!operationFlag) {
+                if (!(operationFlag)) {
                     // Add Node to AST Definition + Update Visited Flag
                     node.visited = true;
                     this.ast.addNode("Non-Terminal", node.name, { line: node.data.line, col: node.data.col });
                     // Check for Node "Block" -- Update Symbol Table Scope
                     if (node.name == "Block") {
-                        console.log("Create new Symbol Table");
+                        //console.log("Create new Symbol Table");
                     }
                 }
                 // Check if Production requires us to collect Terminal(s) or SubTree
                 if (production.seek) {
                     if (operationFlag) {
-                        //this.seekTree(node, operationIndex);
+                        this.seekTree(node, operationIndex);
                     }
                     else {
-                        //var set = this.seekTerminal(node, [], true);
-                        var set;
+                        var set = this.seekTerminal(node, [], true);
                         if (production.seek == "Child") {
                             // Collect Accurate Location for new Single Node
                             var line = set[0].data.line;
                             var col = set[0].data.col;
                             // Combine Set to Single Node [CharList Case]
-                            set = set.map(function (n) { return n.name; }).reduce();
+                            set = set.map(function (n) { return n.name; }).join("");
                             // Add Terminal to AST Defintion
                             this.ast.addNode("Terminal", set, { line: line, col: col });
-                            // TODO: Implement Symbol Table Entry Here
+                            // TODO:- Implement Symbol Table Entry Here
                         }
                         else {
                             for (var terminal in set) {
                                 this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
                             }
-                            // TODO: Implement Symbol Table Entry Here
+                            // TODO:- Implement Symbol Table Entry Here
                         }
                     }
                 }
@@ -100,10 +100,11 @@ var CSCompiler;
                     this.build(node.children[child]);
                 }
             }
-            // // If essential found ascendTree
-            // if (essentialFlag) {
-            //     this.ast.ascentTree();
-            // }
+            // If Essential Production found ascendTree on our AST
+            if (essentialFlag) {
+                this.ast.ascendTree();
+                // TODO:- Implement Check for Production = "Block" -- AscendTree on Symbol Table
+            }
         };
         /**
          * seekTerminal(node, set, first?)
@@ -133,7 +134,35 @@ var CSCompiler;
                     }
                 }
             }
+            // Clean Set of Undefined Elements
+            set = set.filter(function (s) { return s.name != undefined; });
             return set;
+        };
+        /**
+         * seekTree(node, index)
+         * - seekTree is used when an Essential Production has a
+         *   child Node that is an Operator (BoolOp or IntOp). When recognized,
+         *   this method creates the correct subtree for representing the
+         *   Operator subtree and adds it to our AST Definiton.
+         */
+        SemanticAnalyzer.prototype.seekTree = function (node, index) {
+            // Get Operator for Root Node of Subtree + Update Visited Flag
+            node.children[index].visited = true;
+            var root = node.children[index].children[0]; // Get Value of Operator
+            // Add Root to Current AST Definition
+            this.ast.addNode("Non-Terminal", root.name, { line: root.data.line, col: root.data.col });
+            // Collect Terminals
+            for (var child in node.children) {
+                if (node.children[child].name != root.name) {
+                    if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
+                        var set = this.seekTerminal(node.children[child], [], true);
+                        for (var terminal in set) {
+                            this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
+                            // TODO:- Implement Update for Symbol Table Terminals
+                        }
+                    }
+                }
+            }
         };
         return SemanticAnalyzer;
     }());

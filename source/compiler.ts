@@ -105,6 +105,8 @@ module CSCompiler {
                                 
                                 // TODO: Implement Error Message + Update to _AST list
                                 // TODO: Add AST Output to Log
+                                _Log.output({level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
+                                _Log.output({level: "", data: _SemanticAnalyzer.ast.toString()});
                                 break;
 
                             default:
