@@ -16,17 +16,24 @@ module CSCompiler {
          * get(key)
          * - Get handles finding the respective index
          *   for the key value given. Which will give us
-         *   the location about that variable in our values.
+         *   the location about that variable in our values. 
          */
         public get(key) {
             var value = -1; 
 
+            console.log("SYMBOLTABLE: GET Seeking " + key);
+
             // Get Index of Key from Key List
+            console.log("Keys length: " + this.keys.length);
             for (var i = 0; i < this.keys.length; i++) {
-                if (key == this.keys[i]) {
+                console.log("SYMBOLTABLE: GET Current Key " + this.keys[i]);
+                if (key === this.keys[i]) {
+                    console.log("SYMBOLTABLE: GET Found Key");
                     value = this.values[i];
                 }
             }
+
+            console.log("Value Found in Set: " + JSON.stringify(value));
 
             return value;
         }
@@ -42,12 +49,19 @@ module CSCompiler {
         public set(key) {
             var status = false;
 
+            console.log("SYMBOLTABLE: SET attempt for key given " + key);
+
             // Check if Key already exists
-            if (this.get(key) == -1) {
+            if (this.get(key) === -1) {
+                console.log("SYMBOLTABLE: SET New Key added to Keys List + Values Object Created");
                 this.keys.push(key);
                 this.values.push(this.createValue());
                 status = true;
             }
+
+            // Clean Keys of Undefined
+            this.keys = this.keys.filter((k) => { return k != undefined });
+            this.values = this.values.filter((v) => { return v != undefined})
 
             return status;
         }

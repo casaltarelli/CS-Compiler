@@ -74,6 +74,7 @@ var CSCompiler;
                     //console.log("BUILD: Production Node Created in AST: " + node.name);
                     // Check for Node "Block" -- Update Symbol Table Scope
                     if (node.name == "Block") {
+                        console.log("BUILD: Created New Symbol Table Child!");
                         this.scope++;
                         this.symbolTable.addTableNode(this.scope);
                     }
@@ -123,8 +124,6 @@ var CSCompiler;
                                 this.ast.addNode("Terminal", set.substring(1), { line: line, col: col });
                             }
                         }
-                        // Analyze our AST for Symbol Table Updates
-                        this.analyze(this.ast.current);
                     }
                 }
             }
@@ -136,11 +135,16 @@ var CSCompiler;
             }
             // If Essential Production found ascendTree on our AST
             if (essentialFlag) {
-                this.ast.ascendTree();
                 // Ascend to Parent Table
                 if (node.name == "Block") {
-                    this.symbolTable.ascendTree();
+                    this.symbolTable.ascendTable();
+                    console.log("BUILD: Ascended Symbol Table to Parent!");
                 }
+                else {
+                    // Analyze our AST for Symbol Table Updates
+                    this.analyze(this.ast.current);
+                }
+                this.ast.ascendTree();
             }
         };
         /**
@@ -222,14 +226,29 @@ var CSCompiler;
                         for (var s in set) {
                             console.log("   -  " + set[s].name);
                         }
-                        for (var terminal in set) {
-                            this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
+                        var stringIndex = null;
+                        out: for (var terminal in set) {
+                            // console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
+                            if (set[terminal].name != "\"") {
+                                this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
+                            }
+                            else {
+                                stringIndex = terminal;
+                                break out;
+                            }
+                        }
+                        if (stringIndex != null) {
+                            // Collect Accurate Location for new Single Node
+                            var line = set[stringIndex].data.line;
+                            var col = set[stringIndex].data.col;
+                            // Combine Set to Single Node [CharList Case]
+                            set = set.map(function (n) { return n.name; }).join("");
+                            // Add Terminal to AST Defintion
+                            this.ast.addNode("Terminal", set.substring(stringIndex), { line: line, col: col });
                         }
                     }
                 }
             }
-            // Analyze our AST for Symbol Table Updates
-            this.analyze(this.ast.current);
         };
         /**
          * analyze(node) : Boolean
@@ -238,11 +257,16 @@ var CSCompiler;
          *   Boolean flag symbolizing success or fail.
          */
         SemanticAnalyzer.prototype.analyze = function (node, type) {
+            console.log("ANALUZE: Current Scope " + this.symbolTable.current.scope);
             console.log("ANALYZE: Current Node " + node.name);
+            for (var n in node.children) {
+                console.log("ANALYZE: Children [Child]: " + node.children[n].name);
+            }
             var valid = false;
             // Update our Symbol Table based on Node
             switch (node.name) {
                 case "VarDecl":
+                    console.log("ANALYZE: Entering VarDecl");
                     // Get Type + Identifier
                     var type = node.children[0];
                     var id = node.children[1];
@@ -252,8 +276,8 @@ var CSCompiler;
                         // Get ID Reference
                         var reference = this.symbolTable.current.table.get(id.name);
                         // Update Type + Declared Attribute
-                        this.symbolTable.current.table.get(id.name).type = type.name;
-                        this.symbolTable.current.table.get(id.name).declared = { status: true, line: type.data.line, col: type.data.col };
+                        reference.type = type.name;
+                        reference.declared = { status: true, line: type.data.line, col: type.data.col };
                         // Announce Symbol Table Entry
                         this.emitEntry("DECL", id.name, { type: type.name, line: type.data.line, col: type.data.col });
                         // Update Valid Flag
@@ -265,29 +289,48 @@ var CSCompiler;
                     }
                     break;
                 case "AssignmentStatement":
+                    console.log("ANALYZE: Entering Assignment Statement");
                     // Get ID + Expr
                     var id = node.children[0];
                     var expr = node.children[1];
+                    console.log("Expr is set to [" + node.children[1].name + "]");
                     // Get ID Reference in SymbolTable
                     var reference = this.symbolTable.current.table.get(id.name);
+                    console.log("ANALYZE: Reference value returned after SymbolTable GET " + JSON.stringify(reference));
+                    if (reference == -1) {
+                        while (this.symbolTable.current.parent != null && tempReference == -1) {
+                            tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                        }
+                    }
                     if (reference != -1) {
+                        console.log("Reference found in SymbolTable");
                         // Verify Decleration of ID
                         if (reference.declared.status == true) {
-                            // Update Initalized Attribute + EmitEntry 
-                            reference.initalized.push({ line: id.data.line, col: id.data.col });
-                            this.emitEntry("INIT", id.name, { type: reference.type, line: id.data.line, col: id.data.col });
-                            // Check for Operator instance
+                            // Check for Inner-Operator instance
                             if (!(expr.children.length)) {
+                                console.log("Found Expr doesn't contain Operator Node!" + expr.name);
                                 // Check if Expr is ID
                                 var exprType = this.getType(expr);
                                 if (exprType == "id") {
                                     // Get ID Reference
                                     var tempReference = this.symbolTable.current.table.get(expr.name);
+                                    // Check Parent(s) for ID if not found in Current
+                                    if (tempReference == -1) {
+                                        while (this.symbolTable.current.parent != null && tempReference == -1) {
+                                            tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                                        }
+                                    }
                                     if (tempReference != -1) {
                                         // Check Decleration Attribute
                                         if (tempReference.declared.status == true) {
                                             // Validate Types
                                             if (reference.type == tempReference.type) {
+                                                // Push Initalized Instance for Assignment
+                                                // Push New Init Attribute for ID + EmitEntry 
+                                                reference.initalized.push({ line: id.data.line, col: id.data.col });
+                                                this.emitEntry("INIT", id.name, { type: reference.type,
+                                                    line: id.data.line,
+                                                    col: id.data.col });
                                                 // Push New Used Attribute for ID + EmitEntry 
                                                 tempReference.used.push({ line: expr.data.line, col: expr.data.col });
                                                 this.emitEntry("USED", expr.name, { action: "Assignment", line: expr.data.line, col: expr.data.col });
@@ -313,19 +356,26 @@ var CSCompiler;
                                         // EmitError for Type Mismatch
                                         this.emitError("ASSIGNMENT", id.name, { type: reference.type, line: id.data.line, col: id.data.col });
                                     }
+                                    else {
+                                        // Push New Init Attribute for ID + EmitEntry 
+                                        reference.initalized.push({ line: id.data.line, col: id.data.col });
+                                        this.emitEntry("INIT", id.name, { type: reference.type,
+                                            line: id.data.line,
+                                            col: id.data.col });
+                                    }
                                 }
                             }
                             else {
-                                // Compare First Terminal to ID Type
+                                // Compare First Terminal Child to ID Type
                                 if (this.getType(expr.children[0]) == reference.type) {
                                     // EmitEntry for Valid Type Assignment
-                                    this.emitEntry("INIT", id.name, { type: this.symbolTable.current.table.values[index].type,
-                                        line: this.symbolTable.current.table.values[index].declared.line,
-                                        col: this.symbolTable.current.table.values[index].declared.col });
+                                    this.emitEntry("INIT", id.name, { type: reference.type,
+                                        line: id.data.line,
+                                        col: id.data.col });
                                 }
                                 else {
                                     // EmitError for Invalid Type Assignment
-                                    this.emitError("ASSIGNMENT", id.name, { type: this.symbolTable.current.table.values[index].type,
+                                    this.emitError("ASSIGNMENT", id.name, { type: reference.type,
                                         line: id.data.line, col: id.data.col });
                                 }
                             }
@@ -340,105 +390,122 @@ var CSCompiler;
                         this.emitError("UNDECLARED", id.name, { line: id.data.line, col: id.data.col });
                     }
                     break;
+                case "PrintStatement":
+                    // Check if Child Node is ID
+                    if (this.getType(node.children[0]) == "id") {
+                        // Get Reference
+                        var reference = this.symbolTable.current.table.get(node.children[0].name);
+                        // Check Parent(s) for ID if not found in Current
+                        if (tempReference == -1) {
+                            while (this.symbolTable.current.parent != null && tempReference == -1) {
+                                tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                            }
+                        }
+                        if (reference != -1) {
+                            // Verify Decleration of ID
+                            if (reference.declared.status == true) {
+                                // Check Initalized Attribute of ID
+                                if (reference.initalized.length) {
+                                    // Update Used Attribute + EmitEntry
+                                    reference.used.push({ line: node.children[0].data.line, col: node.children[0].data.col });
+                                    this.emitEntry("USED", node.children[0].name, { action: "Print", line: node.children[0].data.line, col: node.children[0].data.col });
+                                }
+                                else {
+                                    // EmitWarning Use of Unintalized Value
+                                    this.emitWarning("UNUSED-INIT", node.children[0].name, { line: node.children[0].data.line, col: node.children[0].data.col });
+                                }
+                            }
+                            else {
+                                // EmitError for Use of Undeclared ID
+                                this.emitError("UNDECLARED", node.children[0].name, { line: node.children[0].data.line, col: node.children[0].data.col });
+                            }
+                        }
+                        else {
+                            // EmitError for Use of Undeclared ID
+                            this.emitError("UNDECLARED", node.children[0].name, { line: node.children[0].data.line, col: node.children[0].data.col });
+                        }
+                    }
+                    break;
                 case "==":
-                case "!=":
+                case "!=": // Utilize Waterfall for Operators
                 case "+":
+                    console.log("ANALYZE: Entering Operator");
                     // Get Exprs
-                    var first = node.children[0];
-                    var second = node.children[1];
-                    // Check Children for Child Nodes
-                    if ((!Array.isArray(first.children) || first.children.length == 0) && (!Array.isArray(second.children) || second.children.length == 0)) {
-                        // Get Expr Types
-                        var exprs = [first, second];
-                        var types = [this.getType(first), this.getType(second)];
-                        // console.log("types[0]: " + types[0]); 
-                        // console.log("types[1]: " + types[1]);
-                        // Check if we need to get IDs
-                        for (var t in types) {
-                            if (types[t] == "id") {
-                                // console.log("ID recognized");
-                                // Get ID Index in Table
-                                var index = this.symbolTable.current.table.get(exprs[t].name);
-                                // Verify Decleration
-                                if (this.symbolTable.current.table.values[index].declared.status == true) {
-                                    // Update Used Attribute
-                                    this.symbolTable.current.table.values[index].used = { status: true, line: exprs[t].data.line, col: exprs[t].data.col };
+                    var exprs = [node.children[0], node.children[1]];
+                    var types = [];
+                    // Get Types for Exprs
+                    for (var e in exprs) {
+                        // Check if Expr is Inner-Operator instance
+                        if (!(exprs[e].children.length)) {
+                            // Get Type
+                            var tempType = this.getType(exprs[e]);
+                            if (tempType == "id") {
+                                // Get ID Reference
+                                var reference = this.symbolTable.current.table.get(exprs[e].name);
+                                // Check Parent(s) for ID if not found in Current
+                                if (tempReference == -1) {
+                                    while (this.symbolTable.current.parent != null && tempReference == -1) {
+                                        tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                                    }
+                                }
+                                // Validate Reference
+                                if (reference != -1) {
+                                    // Check Decleration Attribute
+                                    if (reference.declared.status == true) {
+                                        // Add ID type to Types
+                                        types.push(reference.type);
+                                        // Update Used Attribute for ID + EmitEntry
+                                        reference.used.push({ line: exprs[e].data.line, col: exprs[e].data.col });
+                                        this.emitEntry("USED", exprs[e].name, { action: "Operation", line: exprs[e].data.line, col: exprs[e].data.col });
+                                    }
+                                    else {
+                                        // EmitError for Undeclared ID
+                                        this.emitError("UNDECLARED", exprs[e].name, { line: exprs[e].data.line, col: exprs[e].data.col });
+                                    }
                                 }
                                 else {
                                     // EmitError for Undeclared ID
-                                    this.emitError("UNDECLARED", id.name, { line: exprs[t].data.line, col: exprs[t].data.col });
-                                }
-                                // Update Types Element
-                                types[t] = this.symbolTable.current.table.values[index].type;
-                                console.log("Type: " + this.symbolTable.current.table.values[index].type);
-                            }
-                        }
-                        // Compare Types
-                        if (types[0] != types[1]) {
-                            console.log("a Type: " + types[0] + " b Type: " + types[1]);
-                            this.emitError("OPERATOR", node.name, { line: node.data.line, col: node.data.col });
-                        }
-                    }
-                    else if (!Array.isArray(first.children) || first.children.length == 0) {
-                        // Test all Operators for Type on First Child
-                        if (this.analyze(first)) {
-                            exprs = [first.children[0], second];
-                            // Get First Child Type
-                            types = [this.getType(first.children[0]), this.getType(second)];
-                            // Check if we need to get IDs
-                            for (var t in types) {
-                                if (types[t] == "id") {
-                                    // Get ID Index in Table
-                                    var index = this.symbolTable.current.table.get(exprs[t].name);
-                                    // Verify Decleration
-                                    if (this.symbolTable.current.table.values[index].declared.status == true) {
-                                        // Update Used Attribute
-                                        this.symbolTable.current.table.values[index].used = { status: true, line: exprs[t].data.line, col: exprs[t].data.col };
-                                    }
-                                    else {
-                                        // EmitError for Undeclared ID
-                                        this.emitError("UNDECLARED", id.name, { line: exprs[t].data.line, col: exprs[t].data.col });
-                                    }
-                                    // Update Types Element
-                                    types[t] = this.symbolTable.current.table.values[index].type;
+                                    this.emitError("UNDECLARED", exprs[e].name, { line: exprs[e].data.line, col: exprs[e].data.col });
                                 }
                             }
-                            // Compare Types
-                            if (types[0] != types[1]) {
-                                this.emitError("OPERATOR", node.name, { line: node.data.line, col: node.data.col });
+                            else {
+                                // Add Type to Types
+                                types.push(this.getType(exprs[e]));
+                            }
+                        }
+                        else {
+                            // Get Type First Child of Operator
+                            if (this.getType(exprs[e].children[0].name) == "id") {
+                                // Get ID Reference
+                                var tempReference = this.symbolTable.current.table.get(exprs[e].name);
+                                // Check Parent(s) for ID if not found in Current
+                                if (tempReference == -1) {
+                                    while (this.symbolTable.current.parent != null && tempReference == -1) {
+                                        tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                                    }
+                                }
+                                if (tempReference != -1) {
+                                    // Add ID Type to Types
+                                    types.push(tempReference.type);
+                                }
+                                else {
+                                    // EmitError for Undeclared ID
+                                    this.emitError("UNDECLARED", exprs[e].name, { line: exprs[e].data.line, col: exprs[e].data.col });
+                                }
+                            }
+                            else {
+                                // Add Type to Types
+                                types.push(this.getType(exprs[e].children[0]));
                             }
                         }
                     }
-                    else {
-                        // Test all Operators for Type on First Child
-                        if (this.analyze(first)) {
-                            exprs = [first, second.children[0]];
-                            // Get First Child Type
-                            types = [this.getType(first), this.getType(second.children[0])];
-                            // Check if we need to get IDs
-                            for (var t in types) {
-                                if (types[t] == "id") {
-                                    // Get ID Index in Table
-                                    var index = this.symbolTable.current.table.get(exprs[t].name);
-                                    // Verify Decleration
-                                    if (this.symbolTable.current.table.values[index].declared.status == true) {
-                                        // Update Used Attribute
-                                        this.symbolTable.current.table.values[index].used = { status: true, line: exprs[t].data.line, col: exprs[t].data.col };
-                                    }
-                                    else {
-                                        // EmitError for Undeclared ID
-                                        this.emitError("UNDECLARED", id.name, { line: exprs[t].data.line, col: exprs[t].data.col });
-                                    }
-                                    // Update Types Element
-                                    types[t] = this.symbolTable.current.table.values[index].type;
-                                }
-                            }
-                            // Compare Types
-                            if (types[0] != types[1]) {
-                                this.emitError("OPERATOR", node.name, { line: node.data.line, col: node.data.col });
-                            }
-                        }
+                    // Compare Types for Operation
+                    if (types[0] != types[1]) {
+                        // EmitError for Operator Type Mismatch
+                        this.emitError("OPERATOR", exprs[0].name, { line: exprs[0].data.line, col: exprs[0].data.col });
                     }
+                    break;
+                default:
                     break;
             }
             // console.log("----------------");
@@ -455,19 +522,24 @@ var CSCompiler;
          *   String, Digit, and ID
          */
         SemanticAnalyzer.prototype.getType = function (node) {
+            console.log("GETTYPE: Getting for " + node.name);
             var type = "";
             if (!isNaN(node.name)) {
+                console.log("Int Recognized for " + node.name);
                 type = "int";
             }
             else {
                 if (node.name == "true" || node.name == "false") {
+                    console.log("Boolean Recognized for " + node.name);
                     type = "boolean";
                 }
                 else if (node.name.indexOf('"') > -1) {
+                    console.log("String Recognized for " + node.name);
                     type = "string";
                 }
                 else {
                     // Return ID to notify analyze to add Used entry for ID in our Symbol Table
+                    console.log("ID Recognized for " + node.name);
                     type = "id";
                 }
             }
@@ -490,6 +562,31 @@ var CSCompiler;
             }
             // Output Symbol Table Entry to User
             _Log.output({ level: "DEBUG", data: data });
+        };
+        /**
+         * emitWarning(type, name, info)
+         * - EmitWarning handles the creation of our Warning Entry
+         *   and generating our message object for Log Output.
+         */
+        SemanticAnalyzer.prototype.emitWarning = function (type, name, info) {
+            var data;
+            // Format Message Data Based on Type
+            switch (type) {
+                case "UNINITALIZED":
+                    data = "Variable Used before initalization [ " + name + " ] on line: " + info.line + " col: " + info.col;
+                    break;
+                case "UNUSED-DEC":
+                    data = "Variable Declared but never used [ " + name + " ] on line: " + info.line + " col: " + info.col;
+                    break;
+                case "UNUSED-INIT":
+                    data = "Variable Initalized but never used [ " + name + " ] on line: " + info.line + " col: " + info.col;
+                    break;
+                default:
+                    break;
+            }
+            // Update Warning List + Output to User
+            this.errors.push({ type: type, name: name, line: info.line, col: info.col });
+            _Log.output({ level: "WARN", data: data });
         };
         /**
          * emitError(type, name, info)

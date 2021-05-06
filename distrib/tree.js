@@ -96,6 +96,23 @@ var CSCompiler;
             }
         };
         /**
+         * ascendTable()
+         * - Extension of ascendTree used for our Symbol
+         *   Table definition.
+         */
+        Tree.prototype.ascendTable = function () {
+            // Validate our Current Table isn't Root
+            if (this.current.scope != this.root.scope) {
+                // Check if Parent Exists on Current Table
+                if (this.current.parent) {
+                    this.current = this.current.parent;
+                }
+            }
+            else {
+                console.log("Attempt to ascend when on Table Root");
+            }
+        };
+        /**
          * toString()
          * - ToString gives us the functionality to
          *   convert our Tree definitions into Strings
