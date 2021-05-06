@@ -31,7 +31,7 @@ var CSCompiler;
             _Log.output({ level: "INFO", data: "Starting Semantic Analysis..." });
             // Default Attributes
             this.cst = cst;
-            this.scope = 0;
+            this.scope = -1;
             this.warnings = [];
             this.errors = [];
             this.ast = new CSCompiler.Tree();
@@ -65,13 +65,13 @@ var CSCompiler;
                     if ((this.operators.map(function (o) { return o.name; }).indexOf(node.children[i].name) > -1)) {
                         operationFlag = true;
                         operationIndex = i;
-                        console.log("BUILD: Operation Production Found!");
+                        //console.log("BUILD: Operation Production Found!");
                     }
                 }
                 if (!(operationFlag)) {
                     // Add Node to AST Definition
                     this.ast.addNode("Non-Terminal", node.name, { line: node.data.line, col: node.data.col });
-                    console.log("BUILD: Production Node Created in AST: " + node.name);
+                    //console.log("BUILD: Production Node Created in AST: " + node.name);
                     // Check for Node "Block" -- Update Symbol Table Scope
                     if (node.name == "Block") {
                         this.scope++;
@@ -81,13 +81,13 @@ var CSCompiler;
                 // Check if Production requires us to collect Terminal(s) or SubTree
                 if (production.seek) {
                     if (operationFlag) {
-                        console.log("BUILD: Entering SeekTree");
+                        //console.log("BUILD: Entering SeekTree");
                         this.seekTree(node, operationIndex);
                     }
                     else {
-                        console.log("BUILD: Entering SeekTerminal");
+                        //console.log("BUILD: Entering SeekTerminal");
                         var set = this.seekTerminal(node, [], true);
-                        console.log("BUILD: Set Returned from SeekTerminal:");
+                        //console.log("BUILD: Set Returned from SeekTerminal:");
                         for (var s in set) {
                             console.log("   -  [" + set[s].name + "]");
                         }
@@ -97,7 +97,7 @@ var CSCompiler;
                             var col = set[0].data.col;
                             // Combine Set to Single Node [CharList Case]
                             set = set.map(function (n) { return n.name; }).join("");
-                            console.log("Set For Child: " + set);
+                            //console.log("Set For Child: " + set);
                             // Add Terminal to AST Defintion
                             this.ast.addNode("Terminal", set, { line: line, col: col });
                         }
@@ -119,13 +119,12 @@ var CSCompiler;
                                 var col = set[stringIndex].data.col;
                                 // Combine Set to Single Node [CharList Case]
                                 set = set.map(function (n) { return n.name; }).join("");
-                                console.log("Substring = " + set.substring(1));
                                 // Add Terminal to AST Defintion
                                 this.ast.addNode("Terminal", set.substring(1), { line: line, col: col });
                             }
                         }
                         // Analyze our AST for Symbol Table Updates
-                        //this.analyze(this.ast.current);
+                        this.analyze(this.ast.current);
                     }
                 }
             }
@@ -155,7 +154,7 @@ var CSCompiler;
             if (first) {
                 for (var child in node.children) {
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
-                        console.log("SEEKTERMINAL: FIRST Non-Terminal Found: " + node.children[child].name);
+                        //console.log("SEEKTERMINAL: FIRST Non-Terminal Found: " + node.children[child].name);
                         set.push(this.seekTerminal(node.children[child], set));
                     }
                 }
@@ -164,23 +163,23 @@ var CSCompiler;
                 // We are already past the first set of children, collect all Terminal Nodes found
                 for (var child in node.children) {
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visted)) {
-                        console.log("SEEKTERMINAL: Non-Terminal Found: " + node.children[child].name);
+                        //console.log("SEEKTERMINAL: Non-Terminal Found: " + node.children[child].name);
                         // Validate Child(s) Production doesn't contain Operator Child
                         var operatorFlag = false;
                         for (var c in node.children[child].children) {
                             if ((this.operators.map(function (o) { return o.name; }).indexOf(node.children[child].children[c].name) > -1)) {
                                 operatorFlag = true;
-                                console.log("SEEKTERMIAL: Operator Child for " + node.children[child].children[c].name);
+                                //console.log("SEEKTERMIAL: Operator Child for " + node.children[child].children[c].name)
                             }
                         }
                         if (!(operatorFlag)) {
-                            console.log("SEEKTERMINAL: SeekTerminal on Non-Terminal Found: " + node.children[child].name);
+                            //console.log("SEEKTERMINAL: SeekTerminal on Non-Terminal Found: " + node.children[child].name);
                             node.visited = true;
                             set.push(this.seekTerminal(node.children[child], set));
                         }
                     }
                     else if (!(node.children[child].visited)) {
-                        console.log("SEEKTERMINAL: Push Terminal Found: " + node.children[child].name);
+                        //console.log("SEEKTERMINAL: Push Terminal Found: " + node.children[child].name);
                         node.visited = true;
                         set.push(node.children[child]);
                     }
@@ -203,11 +202,11 @@ var CSCompiler;
             var root = node.children[index].children[0]; // Get Value of Operator
             // Add Root to Current AST Definition
             this.ast.addNode("Non-Terminal", root.name, { line: root.data.line, col: root.data.col });
-            console.log("SEEKTREE: Non-Terminal added to AST Definition: " + root.name);
+            //console.log("SEEKTREE: Non-Terminal added to AST Definition: " + root.name);
             // Collect Terminals
             for (var child in node.children) {
                 if (node.children[child].name != root.name) {
-                    console.log("SEEKTREE: Current Child " + node.children[child].name);
+                    //console.log("SEEKTREE: Current Child " + node.children[child].name);
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
                         // Update Visited Flag + Seek Terminal Children (it's not as creepy as it sounds)
                         node.children[child].visited = true;
@@ -218,8 +217,8 @@ var CSCompiler;
                         else {
                             set = this.seekTerminal(node.children[child], []);
                         }
-                        console.log("SEEKTREE: Non-Terminal Child Found " + node.children[child].name);
-                        console.log("SEEKTREE: Set Returned from SeekTerminal:");
+                        //console.log("SEEKTREE: Non-Terminal Child Found " + node.children[child].name);
+                        //console.log("SEEKTREE: Set Returned from SeekTerminal:");
                         for (var s in set) {
                             console.log("   -  " + set[s].name);
                         }
@@ -230,13 +229,13 @@ var CSCompiler;
                 }
             }
             // Analyze our AST for Symbol Table Updates
-            //this.analyze(this.ast.current);
+            this.analyze(this.ast.current);
         };
         /**
          * analyze(node) : Boolean
          * - Analyze will be used to update our SymbolTable
          *   based on the AST Node given. Will return a
-         *   Boolean flag symbolizing success or fail
+         *   Boolean flag symbolizing success or fail.
          */
         SemanticAnalyzer.prototype.analyze = function (node, type) {
             console.log("ANALYZE: Current Node " + node.name);
@@ -255,20 +254,15 @@ var CSCompiler;
                         // Update Type + Declared Attributes
                         this.symbolTable.current.table.values[index].type = type.name;
                         this.symbolTable.current.table.values[index].declared = { status: true, line: type.data.line, col: type.data.col };
+                        // Announce Symbol Table Entry
+                        // this.emitEntry("Decl", this.symbolTable.current.table.keys[index], this.symbolTable.current.table.values[index])
+                        console.log("Symbol Table Entry on Scope " + this.symbolTable.current.scope);
+                        console.log("Variable Added: " + this.symbolTable.current.table.keys[index]);
+                        console.log("Variable Type: " + this.symbolTable.current.table.values[index].type);
                         // Update Valid Flag
                         valid = true;
                     }
                     else {
-                        // Check Parent Tables to get correct Index
-                        var parent;
-                        var found = false;
-                        while (this.symbolTable.current.parent != null && found == false) {
-                            parent = this.symbolTable.current.parent;
-                            status = parent.current.table.get(id.name);
-                            if (status != -1) {
-                                found = true;
-                            }
-                        }
                         // EmitError for Redeclared ID
                         this.emitError("REDECLARED", id.name, { line: id.data.line, col: id.data.col });
                     }

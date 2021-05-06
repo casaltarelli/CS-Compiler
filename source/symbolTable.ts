@@ -36,7 +36,8 @@ module CSCompiler {
          * - Set handles creating a new entry
          *   for a variable found during Semantic
          *   Analysis. Will return True or False
-         *   based on if variable exists or not.
+         *   based on if variable exists or not
+         *   for a respective SymbolTable Node.
          */
         public set(key) {
             var status = false;
@@ -62,7 +63,7 @@ module CSCompiler {
                 type: null,
                 declared: null,
                 initalized: null,
-                used: null
+                used: []
             }
         }
     }
