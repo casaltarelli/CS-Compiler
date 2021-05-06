@@ -19,16 +19,16 @@ module CSCompiler {
          *   the location about that variable in our values.
          */
         public get(key) {
-            var index = -1; 
+            var value = -1; 
 
             // Get Index of Key from Key List
             for (var i = 0; i < this.keys.length; i++) {
                 if (key == this.keys[i]) {
-                    index = i;
+                    value = this.values[i];
                 }
             }
 
-            return index;
+            return value;
         }
 
         /**

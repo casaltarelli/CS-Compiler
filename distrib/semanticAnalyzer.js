@@ -249,16 +249,13 @@ var CSCompiler;
                     // Create Identifier Entry
                     var status = this.symbolTable.current.table.set(id.name);
                     if (status) {
-                        // Get ID Index in Table
-                        var index = this.symbolTable.current.table.get(id.name);
-                        // Update Type + Declared Attributes
-                        this.symbolTable.current.table.values[index].type = type.name;
-                        this.symbolTable.current.table.values[index].declared = { status: true, line: type.data.line, col: type.data.col };
+                        // Get ID Reference
+                        var reference = this.symbolTable.current.table.get(id.name);
+                        // Update Type + Declared Attribute
+                        this.symbolTable.current.table.get(id.name).type = type.name;
+                        this.symbolTable.current.table.get(id.name).declared = { status: true, line: type.data.line, col: type.data.col };
                         // Announce Symbol Table Entry
-                        this.emitEntry("DECL", this.symbolTable.current.table.keys[index], this.symbolTable.current.table.values[index]);
-                        console.log("Symbol Table Entry on Scope " + this.symbolTable.current.scope);
-                        console.log("Variable Added: " + this.symbolTable.current.table.keys[index]);
-                        console.log("Variable Type: " + this.symbolTable.current.table.values[index].type);
+                        this.emitEntry("DECL", id.name, { type: type.name, line: type.data.line, col: type.data.col });
                         // Update Valid Flag
                         valid = true;
                     }
@@ -272,37 +269,64 @@ var CSCompiler;
                     var id = node.children[0];
                     var expr = node.children[1];
                     // Get ID Reference in SymbolTable
-                    var status = this.symbolTable.current.table.get(id.name);
-                    if (status != -1) {
-                        // Get ID Index in Table
-                        var index = this.symbolTable.current.table.get(id.name);
+                    var reference = this.symbolTable.current.table.get(id.name);
+                    if (reference != -1) {
                         // Verify Decleration of ID
-                        if (this.symbolTable.current.table.values[index].declared.status == true) {
-                            // Update Initalized Attribute
-                            this.symbolTable.current.table.values[index].initalized = { status: true, line: id.data.line, col: id.data.col };
+                        if (reference.declared.status == true) {
+                            // Update Initalized Attribute + EmitEntry 
+                            reference.initalized.push({ line: id.data.line, col: id.data.col });
+                            this.emitEntry("INIT", id.name, { type: reference.type, line: id.data.line, col: id.data.col });
+                            // Check for Operator instance
                             if (!(expr.children.length)) {
-                                // Validate Expression Type
-                                if (this.getType(expr) != this.symbolTable.current.table.values[index].type) {
-                                    // EmitError for Invalid Type Assignment
-                                    this.emitError("ASSIGNMENT", id.name, { type: this.symbolTable.current.table.values[index].type,
+                                // Check if Expr is ID
+                                var exprType = this.getType(expr);
+                                if (exprType == "id") {
+                                    // Get ID Reference
+                                    var tempReference = this.symbolTable.current.table.get(expr.name);
+                                    if (tempReference != -1) {
+                                        // Check Decleration Attribute
+                                        if (tempReference.declared.status == true) {
+                                            // Validate Types
+                                            if (reference.type == tempReference.type) {
+                                                // Push New Used Attribute for ID + EmitEntry 
+                                                tempReference.used.push({ line: expr.data.line, col: expr.data.col });
+                                                this.emitEntry("USED", expr.name, { action: "Assignment", line: expr.data.line, col: expr.data.col });
+                                            }
+                                            else {
+                                                // EmitError for Type Mismatch
+                                                this.emitError("ASSIGNMENT", id.name, { type: reference.type, line: id.data.line, col: id.data.col });
+                                            }
+                                        }
+                                        else {
+                                            // EmitError for Unintialized 
+                                            this.emitError("UNDECLARED", expr.name, { line: expr.data.line, col: expr.data.col });
+                                        }
+                                    }
+                                    else {
+                                        // EmitError for Unintialized 
+                                        this.emitError("UNDECLARED", expr.name, { line: expr.data.line, col: expr.data.col });
+                                    }
+                                }
+                                else {
+                                    // Validate Types
+                                    if (reference.type != exprType) {
+                                        // EmitError for Type Mismatch
+                                        this.emitError("ASSIGNMENT", id.name, { type: reference.type, line: id.data.line, col: id.data.col });
+                                    }
+                                }
+                            }
+                            else {
+                                // Compare First Terminal to ID Type
+                                if (this.getType(expr.children[0]) == reference.type) {
+                                    // EmitEntry for Valid Type Assignment
+                                    this.emitEntry("INIT", id.name, { type: this.symbolTable.current.table.values[index].type,
                                         line: this.symbolTable.current.table.values[index].declared.line,
                                         col: this.symbolTable.current.table.values[index].declared.col });
                                 }
                                 else {
-                                    // EmitEntry for Valid Type Assignment
-                                    this.emitEntry("INIT", this.symbolTable.current.table.keys[index], { type: this.getType(expr), line: id.data.line, col: id.data.col });
-                                }
-                            }
-                            else {
-                                status = this.analyze(expr);
-                                if (status) {
-                                    // Compare First Terminal to ID Type
-                                    if (this.getType(expr.children[0]) != this.symbolTable.current.table.values[index].type) {
-                                        // EmitError for Invalid Type Assignment
-                                        this.emitError("ASSIGNMENT", id.name, { type: this.symbolTable.current.table.values[index].type,
-                                            line: this.symbolTable.current.table.values[index].declared.line,
-                                            col: this.symbolTable.current.table.values[index].declared.col });
-                                    }
+                                    // EmitError for Invalid Type Assignment
+                                    this.emitError("ASSIGNMENT", id.name, { type: this.symbolTable.current.table.values[index].type,
+                                        line: id.data.line, col: id.data.col });
                                 }
                             }
                         }
@@ -453,10 +477,10 @@ var CSCompiler;
             var data;
             switch (type) {
                 case "DECL":
-                    data = "Variable Decleration [ " + name + " ] of type [ " + info.type + " ] on line: " + info.declared.line + " on col: " + info.declareed.col;
+                    data = "Variable Decleration [ " + name + " ] of type [ " + info.type + " ] on line: " + info.line + " on col: " + info.col;
                     break;
                 case "INIT":
-                    data = "Variable Assignment [ " + name + " ] of type [ " + info.type + " ] matches assignment of type [ " + info.type + " on line: " + info.line + " on col: " + info.col + " matched ";
+                    data = "Variable Assignment [ " + name + " ] of type [ " + info.type + " ] matches assignment of type [ " + info.type + " ] on line: " + info.line + " on col: " + info.col;
                     break;
                 case "USED":
                     data = "Variable Used [ " + name + " ] for [ " + info.action + " ] on line: " + info.line + " col: " + info.col;
@@ -473,7 +497,6 @@ var CSCompiler;
          *   generating our message object for Log Output.
          */
         SemanticAnalyzer.prototype.emitError = function (type, name, info) {
-            // Check Analyzing Flag to prevent output of Additional Messages after initial Error
             var data;
             // Format Message Date Based on Type
             switch (type) {
@@ -484,7 +507,7 @@ var CSCompiler;
                     data = "Variable not declared before use [ " + name + " ] on line: " + info.line + " col: " + info.col;
                     break;
                 case "ASSIGNMENT":
-                    data = "Initialized Type Mismatch on [ " + name + " ] type [ " + info.type + " ] on line: " + info.line + " ] col: " + info.col;
+                    data = "Assignment Type Mismatch on [ " + name + " ] type [ " + info.type + " ] on line: " + info.line + " col: " + info.col;
                     break;
                 case "OPERATOR":
                     data = "Operator Type Mismatch on  [ " + name + " ] on line " + info.line + " col " + info.col;

@@ -87,7 +87,8 @@ var CSCompiler;
                                 _SemanticAnalyzer.init(_Parser.cst);
                                 _SemanticAnalyzer.build(_SemanticAnalyzer.cst.root);
                                 // Announce Completion
-                                _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.errors.length + " ERROR(S)\n" });
+                                _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.warnings.length + " WARNING(S) and "
+                                        + _SemanticAnalyzer.errors.length + " ERROR(S)\n" });
                                 // TODO: Implement Error Message + Update to _AST list
                                 // TODO: Add AST Output to Log
                                 _Log.output({ level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });

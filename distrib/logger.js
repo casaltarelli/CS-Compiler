@@ -50,7 +50,6 @@ var CSCompiler;
         Logger.prototype.output = function (msg) {
             // Validate Verbose Mode
             if (!_Verbose && msg.level != "INFO") {
-                console.log("Case hit!");
                 return;
             }
             // Determine Msg Type for Output Formatting
@@ -73,6 +72,9 @@ var CSCompiler;
                             + " found [ " + msg.data.found + " ] "
                             + "on line: " + msg.data.loc.line
                             + " col: " + msg.data.loc.col + "\n";
+                    }
+                    else if (_Stage == "Semantic Analysis") {
+                        this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                     }
                     break;
                 case "WARN":
