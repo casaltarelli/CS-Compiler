@@ -255,7 +255,7 @@ var CSCompiler;
                         this.symbolTable.current.table.values[index].type = type.name;
                         this.symbolTable.current.table.values[index].declared = { status: true, line: type.data.line, col: type.data.col };
                         // Announce Symbol Table Entry
-                        // this.emitEntry("Decl", this.symbolTable.current.table.keys[index], this.symbolTable.current.table.values[index])
+                        this.emitEntry("DECL", this.symbolTable.current.table.keys[index], this.symbolTable.current.table.values[index]);
                         console.log("Symbol Table Entry on Scope " + this.symbolTable.current.scope);
                         console.log("Variable Added: " + this.symbolTable.current.table.keys[index]);
                         console.log("Variable Type: " + this.symbolTable.current.table.values[index].type);
@@ -287,6 +287,10 @@ var CSCompiler;
                                     this.emitError("ASSIGNMENT", id.name, { type: this.symbolTable.current.table.values[index].type,
                                         line: this.symbolTable.current.table.values[index].declared.line,
                                         col: this.symbolTable.current.table.values[index].declared.col });
+                                }
+                                else {
+                                    // EmitEntry for Valid Type Assignment
+                                    this.emitEntry("INIT", this.symbolTable.current.table.keys[index], { type: this.getType(expr), line: id.data.line, col: id.data.col });
                                 }
                             }
                             else {
@@ -420,6 +424,12 @@ var CSCompiler;
             // }
             return valid;
         };
+        /**
+         * getType(node)
+         * - GetType is used to find the proper data type
+         *   based on the node given. Can recognize Boolean,
+         *   String, Digit, and ID
+         */
         SemanticAnalyzer.prototype.getType = function (node) {
             var type = "";
             if (!isNaN(node.name)) {
@@ -433,11 +443,35 @@ var CSCompiler;
                     type = "string";
                 }
                 else {
+                    // Return ID to notify analyze to add Used entry for ID in our Symbol Table
                     type = "id";
                 }
             }
             return type;
         };
+        SemanticAnalyzer.prototype.emitEntry = function (type, name, info) {
+            var data;
+            switch (type) {
+                case "DECL":
+                    data = "Variable Decleration [ " + name + " ] of type [ " + info.type + " ] on line: " + info.declared.line + " on col: " + info.declareed.col;
+                    break;
+                case "INIT":
+                    data = "Variable Assignment [ " + name + " ] of type [ " + info.type + " ] matches assignment of type [ " + info.type + " on line: " + info.line + " on col: " + info.col + " matched ";
+                    break;
+                case "USED":
+                    data = "Variable Used [ " + name + " ] for [ " + info.action + " ] on line: " + info.line + " col: " + info.col;
+                    break;
+                default:
+                    break;
+            }
+            // Output Symbol Table Entry to User
+            _Log.output({ level: "DEBUG", data: data });
+        };
+        /**
+         * emitError(type, name, info)
+         * - EmitError handles the creation of our Error Entry and
+         *   generating our message object for Log Output.
+         */
         SemanticAnalyzer.prototype.emitError = function (type, name, info) {
             // Check Analyzing Flag to prevent output of Additional Messages after initial Error
             var data;

@@ -62,7 +62,7 @@ module CSCompiler {
             return {
                 type: null,
                 declared: null,
-                initalized: null,
+                initalized: [],
                 used: []
             }
         }
