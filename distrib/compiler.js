@@ -54,7 +54,7 @@ var CSCompiler;
                                 // Validate Successful Lex -- Output Compilation Stopped for Program
                                 if (_Lexer.errors.length > 0) {
                                     _Log.output({ level: "", data: "--------------------" });
-                                    _Log.output({ level: "INFO", data: "Compliation Stopped due to Lexer errors..." });
+                                    _Log.output({ level: "INFO", data: "Compliation Stopped due to Lexer error(s)..." });
                                     break out;
                                 }
                                 else {
@@ -71,7 +71,7 @@ var CSCompiler;
                                 // Validate Successful Parse -- Output Compilation Stopped for Program
                                 if (_Parser.errors.length > 0) {
                                     _Log.output({ level: "", data: "--------------------" });
-                                    _Log.output({ level: "INFO", data: "Compliation Stopped due to Parser errors..." });
+                                    _Log.output({ level: "INFO", data: "Compliation Stopped due to Parser error(s)..." });
                                     break out;
                                 }
                                 else {
@@ -86,13 +86,27 @@ var CSCompiler;
                                 // Init Semantic Analyzer for AST + Semantic Analysis
                                 _SemanticAnalyzer.init(_Parser.cst);
                                 _SemanticAnalyzer.build(_SemanticAnalyzer.cst.root);
+                                // Add Validated AST to Global Reference + Scan for Warnings
+                                _ASTs.push(_SemanticAnalyzer.ast);
+                                _SemanticAnalyzer.scan(_SemanticAnalyzer.symbolTable.root);
                                 // Announce Completion
                                 _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.warnings.length + " WARNING(S) and "
                                         + _SemanticAnalyzer.errors.length + " ERROR(S)\n" });
-                                // TODO: Implement Error Message + Update to _AST list
-                                // TODO: Add AST Output to Log
+                                // Output AST to Log
                                 _Log.output({ level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
                                 _Log.output({ level: "", data: _SemanticAnalyzer.ast.toString() });
+                                // Validate Successful Semantic Analysis -- Output Symbol Table
+                                // if (_SemanticAnalyzer.errors.length > 0) {
+                                //     _Log.output({level: "", data: "--------------------"});
+                                //     _Log.output({level: "INFO", data: "Compliation Stopped due to Semantic Analysis error(s)..."});
+                                //     break out;   
+                                // } else {
+                                //     // Add Validated Symbol Table to Global Reference
+                                //     _SymbolTables.push(_SemanticAnalyzer.ast);
+                                //     // Output Symbol Table to Log
+                                //     _Log.output({level: "", data: "Symbol Table generated for program " + _PID + "\n" });
+                                //     // TODO:- Implement tableToString()
+                                // }
                                 break;
                             default:
                                 // This should never happen, but you never know for sure

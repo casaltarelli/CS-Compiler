@@ -36,6 +36,8 @@ var _CSTs = [];
 
 // Semantic Analyzer
 var _SemanticAnalyzer: CSCompiler.SemanticAnalyzer;
+var _ASTs = [];
+var _SymbolTables = [];
 
 // OnLoad
 var onDocumentLoad = function() {

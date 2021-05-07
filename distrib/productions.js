@@ -14,7 +14,7 @@
          that we have a successful match.
      - Essential? = This Production is considered essential in our AST definition generated during Semantic Analysis
      - Seek? = Only occurs for specific Essential Productions that tell our Semantic Analyzer how to build its subtree or collect
-         children Nodes
+         Terminal Children Nodes
 
     All Sets are contained within Two-Dimensional Arrays to aid in determining which Production Rule to Follow.
     As you will see within Parse, the first thing we do is determine our Longest Match on our First Sets which tells us
@@ -34,16 +34,16 @@ var _Productions = [
     { name: "StatementList", first: [], follow: [], inner: [["Statement", "StatementList"]], peek: true },
     { name: "Statement", first: [], follow: [],
         inner: [["Block", "PrintStatement", "WhileStatement", "IfStatement", "AssignmentStatement", "VarDecl"]], peek: true },
-    { name: "PrintStatement", first: [["PRINT", "L_PARAN"]], follow: [["R_PARAN"]], inner: [["Expr"]], essential: true, seek: "Child" },
-    { name: "AssignmentStatement", first: [["ID", "ASSIGN_OP"]], follow: [], inner: [["Expr"]], essential: true, seek: "Children" },
-    { name: "VarDecl", first: [], follow: [], inner: [["Type", "ID"]], essential: true, seek: "Children" },
+    { name: "PrintStatement", first: [["PRINT", "L_PARAN"]], follow: [["R_PARAN"]], inner: [["Expr"]], essential: true, seek: true },
+    { name: "AssignmentStatement", first: [["ID", "ASSIGN_OP"]], follow: [], inner: [["Expr"]], essential: true, seek: true },
+    { name: "VarDecl", first: [], follow: [], inner: [["Type", "ID"]], essential: true, seek: true },
     { name: "WhileStatement", first: [["WHILE"]], follow: [], inner: [["BooleanExpr", "Block"]], essential: true },
     { name: "IfStatement", first: [["IF"]], follow: [], inner: [["BooleanExpr", "Block"]], essential: true },
     { name: "Expr", first: [], follow: [],
         inner: [["IntExpr", "StringExpr", "BooleanExpr", "ID"]], peek: true },
-    { name: "IntExpr", first: [["DIGIT", "INT_OP"], ["DIGIT"]], follow: [], inner: [["Expr"], []], essential: true, seek: "Children" },
-    { name: "StringExpr", first: [["QUOTE"]], follow: [["QUOTE"]], inner: [["CharList"]], essential: true, seek: "Child" },
-    { name: "BooleanExpr", first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []], inner: [["Expr", "BoolOp", "Expr"], []], essential: true, seek: "Children" },
+    { name: "IntExpr", first: [["DIGIT", "INT_OP"], ["DIGIT"]], follow: [], inner: [["Expr"], []], essential: true, seek: true },
+    { name: "StringExpr", first: [["QUOTE"]], follow: [["QUOTE"]], inner: [["CharList"]], essential: true, seek: true },
+    { name: "BooleanExpr", first: [["L_PARAN"], ["BOOL_VAL"]], follow: [["R_PARAN"], []], inner: [["Expr", "BoolOp", "Expr"], []], essential: true, seek: true },
     { name: "ID", first: [["ID"]], follow: [], inner: [] },
     { name: "CharList", first: [["CHAR"], ["SPACE"]], follow: [], inner: [["CharList"], ["CharList"]], peek: true },
     { name: "Type", first: [["INT", "STRING", "BOOLEAN"]], follow: [], inner: [], ambiguous: true },

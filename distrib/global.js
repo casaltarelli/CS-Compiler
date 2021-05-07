@@ -29,6 +29,8 @@ var _Parser;
 var _CSTs = [];
 // Semantic Analyzer
 var _SemanticAnalyzer;
+var _ASTs = [];
+var _SymbolTables = [];
 // OnLoad
 var onDocumentLoad = function () {
     // Instantiate our Compiler

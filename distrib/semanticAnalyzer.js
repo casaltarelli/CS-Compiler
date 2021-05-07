@@ -74,7 +74,7 @@ var CSCompiler;
                     //console.log("BUILD: Production Node Created in AST: " + node.name);
                     // Check for Node "Block" -- Update Symbol Table Scope
                     if (node.name == "Block") {
-                        console.log("BUILD: Created New Symbol Table Child!");
+                        //console.log("BUILD: Created New Symbol Table Child!");
                         this.scope++;
                         this.symbolTable.addTableNode(this.scope);
                     }
@@ -88,41 +88,33 @@ var CSCompiler;
                     else {
                         //console.log("BUILD: Entering SeekTerminal");
                         var set = this.seekTerminal(node, [], true);
-                        //console.log("BUILD: Set Returned from SeekTerminal:");
-                        for (var s in set) {
-                            console.log("   -  [" + set[s].name + "]");
+                        // console.log("BUILD: Set Returned from SeekTerminal: ");
+                        // for (var s in set) {
+                        //     console.log(" - " + set[s].name);
+                        // }
+                        // Collect Non-Terminals Collected -- Check Set for Quote Instance [String]
+                        var stringIndex = null;
+                        out: for (var terminal in set) {
+                            if (set[terminal].name != "\"") {
+                                // Add Terminal to AST
+                                this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
+                                //console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
+                            }
+                            else {
+                                stringIndex = terminal;
+                                break out;
+                            }
                         }
-                        if (production.seek == "Child") {
+                        // Check if String Found
+                        if (stringIndex != null) {
                             // Collect Accurate Location for new Single Node
-                            var line = set[0].data.line;
-                            var col = set[0].data.col;
+                            var line = set[stringIndex].data.line;
+                            var col = set[stringIndex].data.col;
                             // Combine Set to Single Node [CharList Case]
                             set = set.map(function (n) { return n.name; }).join("");
-                            //console.log("Set For Child: " + set);
                             // Add Terminal to AST Defintion
-                            this.ast.addNode("Terminal", set, { line: line, col: col });
-                        }
-                        else {
-                            var stringIndex = null;
-                            out: for (var terminal in set) {
-                                // console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
-                                if (set[terminal].name != "\"") {
-                                    this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
-                                }
-                                else {
-                                    stringIndex = terminal;
-                                    break out;
-                                }
-                            }
-                            if (stringIndex != null) {
-                                // Collect Accurate Location for new Single Node
-                                var line = set[stringIndex].data.line;
-                                var col = set[stringIndex].data.col;
-                                // Combine Set to Single Node [CharList Case]
-                                set = set.map(function (n) { return n.name; }).join("");
-                                // Add Terminal to AST Defintion
-                                this.ast.addNode("Terminal", set.substring(1), { line: line, col: col });
-                            }
+                            this.ast.addNode("Terminal", set.substring(stringIndex), { line: line, col: col });
+                            //console.log("BUILD: Terminal Symbol added to AST: " + set.substring(stringIndex));
                         }
                     }
                 }
@@ -130,6 +122,7 @@ var CSCompiler;
             // Proceed to Children for current Node
             for (var child in node.children) {
                 if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
+                    //console.log("BUILD: Call for Non-Terminal " + node.children[child].name);
                     this.build(node.children[child]);
                 }
             }
@@ -138,7 +131,7 @@ var CSCompiler;
                 // Ascend to Parent Table
                 if (node.name == "Block") {
                     this.symbolTable.ascendTable();
-                    console.log("BUILD: Ascended Symbol Table to Parent!");
+                    //console.log("BUILD: Ascended Symbol Table to Parent!");
                 }
                 else {
                     // Analyze our AST for Symbol Table Updates
@@ -178,12 +171,14 @@ var CSCompiler;
                         }
                         if (!(operatorFlag)) {
                             //console.log("SEEKTERMINAL: SeekTerminal on Non-Terminal Found: " + node.children[child].name);
+                            //console.log("SEEKTERMINAL: Node marked as visited " + node.name);
                             node.visited = true;
                             set.push(this.seekTerminal(node.children[child], set));
                         }
                     }
                     else if (!(node.children[child].visited)) {
                         //console.log("SEEKTERMINAL: Push Terminal Found: " + node.children[child].name);
+                        //console.log("SEEKTERMINAL: Node marked as visited " + node.name);
                         node.visited = true;
                         set.push(node.children[child]);
                     }
@@ -202,6 +197,7 @@ var CSCompiler;
          */
         SemanticAnalyzer.prototype.seekTree = function (node, index) {
             // Get Operator for Root Node of Subtree + Update Visited Flag
+            //console.log("SEEKTREE: Node marked as visited " + node.children[index].name);
             node.children[index].visited = true;
             var root = node.children[index].children[0]; // Get Value of Operator
             // Add Root to Current AST Definition
@@ -210,25 +206,27 @@ var CSCompiler;
             // Collect Terminals
             for (var child in node.children) {
                 if (node.children[child].name != root.name) {
-                    //console.log("SEEKTREE: Current Child " + node.children[child].name);
+                    //console.log("SEEKTREE: Current Child [" + node.children[child].name + "] Visited Marked as " + node.children[child].visited);
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
                         // Update Visited Flag + Seek Terminal Children (it's not as creepy as it sounds)
-                        node.children[child].visited = true;
+                        // node.children[child].visited = true;
+                        //console.log("SEEKTREE: Non-Terminal Child [" + node.children[child].name + "] marked as visited");
                         var set;
                         if (node.children[child].children.length > 1) {
+                            //console.log("SEEKTREE: Entering SeekTerminal [First]")
                             set = this.seekTerminal(node.children[child], [], true);
                         }
                         else {
+                            //console.log("SEEKTREE: Entering SeekTerminal");
                             set = this.seekTerminal(node.children[child], []);
                         }
-                        //console.log("SEEKTREE: Non-Terminal Child Found " + node.children[child].name);
                         //console.log("SEEKTREE: Set Returned from SeekTerminal:");
                         for (var s in set) {
                             console.log("   -  " + set[s].name);
                         }
                         var stringIndex = null;
                         out: for (var terminal in set) {
-                            // console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
+                            //console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
                             if (set[terminal].name != "\"") {
                                 this.ast.addNode("Terminal", set[terminal].name, { line: set[terminal].data.line, col: set[terminal].data.col });
                             }
@@ -366,8 +364,14 @@ var CSCompiler;
                                 }
                             }
                             else {
-                                // Compare First Terminal Child to ID Type
-                                if (this.getType(expr.children[0]) == reference.type) {
+                                console.log("Children realized for " + expr.name);
+                                if ((expr.name == "==" || expr.name == "!=") && "boolean" == reference.type) {
+                                    // EmitEntry for Valid Type Assignment
+                                    this.emitEntry("INIT", id.name, { type: reference.type,
+                                        line: id.data.line,
+                                        col: id.data.col });
+                                }
+                                else if (this.getType(expr.children[0]) == reference.type) {
                                     // EmitEntry for Valid Type Assignment
                                     this.emitEntry("INIT", id.name, { type: reference.type,
                                         line: id.data.line,
@@ -396,9 +400,9 @@ var CSCompiler;
                         // Get Reference
                         var reference = this.symbolTable.current.table.get(node.children[0].name);
                         // Check Parent(s) for ID if not found in Current
-                        if (tempReference == -1) {
-                            while (this.symbolTable.current.parent != null && tempReference == -1) {
-                                tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                        if (reference == -1) {
+                            while (this.symbolTable.current.parent != null && reference == -1) {
+                                reference = this.symbolTable.current.parent.table.get(node.children[0].name);
                             }
                         }
                         if (reference != -1) {
@@ -412,7 +416,7 @@ var CSCompiler;
                                 }
                                 else {
                                     // EmitWarning Use of Unintalized Value
-                                    this.emitWarning("UNUSED-INIT", node.children[0].name, { line: node.children[0].data.line, col: node.children[0].data.col });
+                                    this.emitWarning("UNINITALIZED", node.children[0].name, { line: node.children[0].data.line, col: node.children[0].data.col });
                                 }
                             }
                             else {
@@ -435,17 +439,21 @@ var CSCompiler;
                     var types = [];
                     // Get Types for Exprs
                     for (var e in exprs) {
+                        console.log("ANALYZE: Operator - Current Expr [" + exprs[e].name + "]");
+                        console.log("ANALYZE: Operator - Result of Children [" + exprs[e].children + "]");
                         // Check if Expr is Inner-Operator instance
                         if (!(exprs[e].children.length)) {
+                            console.log("Recognized Empty List");
+                            console.log("Result of Expr Reference [" + exprs[e].name + "]");
                             // Get Type
                             var tempType = this.getType(exprs[e]);
                             if (tempType == "id") {
                                 // Get ID Reference
                                 var reference = this.symbolTable.current.table.get(exprs[e].name);
                                 // Check Parent(s) for ID if not found in Current
-                                if (tempReference == -1) {
-                                    while (this.symbolTable.current.parent != null && tempReference == -1) {
-                                        tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                                if (reference == -1) {
+                                    while (this.symbolTable.current.parent != null && reference == -1) {
+                                        reference = this.symbolTable.current.parent.table.get(expr[e].name);
                                     }
                                 }
                                 // Validate Reference
@@ -474,19 +482,24 @@ var CSCompiler;
                             }
                         }
                         else {
-                            // Get Type First Child of Operator
-                            if (this.getType(exprs[e].children[0].name) == "id") {
+                            // Check for Boolean Operator -- Override Type on Child Type
+                            if (exprs[e].name == "==" || exprs[e].name == "!=") {
+                                console.log("Recognized Parent Operator " + exprs[e].name);
+                                types.push("boolean");
+                            }
+                            else if (this.getType(exprs[e].children[0]) == "id") {
                                 // Get ID Reference
-                                var tempReference = this.symbolTable.current.table.get(exprs[e].name);
+                                var tempReference = this.symbolTable.current.table.get(exprs[e].children[0].name);
                                 // Check Parent(s) for ID if not found in Current
                                 if (tempReference == -1) {
                                     while (this.symbolTable.current.parent != null && tempReference == -1) {
-                                        tempReference = this.symbolTable.current.parent.table.get(expr.name);
+                                        tempReference = this.symbolTable.current.parent.table.get(expr[e].children[0].name);
                                     }
                                 }
                                 if (tempReference != -1) {
-                                    // Add ID Type to Types
-                                    types.push(tempReference.type);
+                                    // Update Used Attribute for Type + Push Type to Types
+                                    tempReference.used.push({ line: exprs[e].data.line, col: exprs[e].data.col });
+                                    this.emitEntry("USED", tempReference.name, { action: "Operation", line: exprs[e].data.line, col: exprs[e].data.col });
                                 }
                                 else {
                                     // EmitError for Undeclared ID
@@ -499,8 +512,13 @@ var CSCompiler;
                             }
                         }
                     }
+                    console.log("OPERATOR: Types Found");
+                    for (var t in types) {
+                        console.log(" - " + types[t]);
+                    }
                     // Compare Types for Operation
                     if (types[0] != types[1]) {
+                        console.log("Types did not equal");
                         // EmitError for Operator Type Mismatch
                         this.emitError("OPERATOR", exprs[0].name, { line: exprs[0].data.line, col: exprs[0].data.col });
                     }
@@ -508,11 +526,6 @@ var CSCompiler;
                 default:
                     break;
             }
-            // console.log("----------------");
-            // console.log("New Call Node given: " + node.name);
-            // for (var c in node.children) {
-            //     console.log("Child: " + node.children[c].name);
-            // }
             return valid;
         };
         /**
@@ -523,27 +536,29 @@ var CSCompiler;
          */
         SemanticAnalyzer.prototype.getType = function (node) {
             console.log("GETTYPE: Getting for " + node.name);
-            var type = "";
+            //var type = "";
             if (!isNaN(node.name)) {
                 console.log("Int Recognized for " + node.name);
-                type = "int";
+                return "int";
             }
             else {
-                if (node.name == "true" || node.name == "false") {
-                    console.log("Boolean Recognized for " + node.name);
-                    type = "boolean";
-                }
-                else if (node.name.indexOf('"') > -1) {
+                if (node.name.indexOf('"') > -1) {
                     console.log("String Recognized for " + node.name);
-                    type = "string";
+                    return "string";
+                }
+                else if (node.name.length == 1) {
+                    console.log("ID Recognized for " + node.name);
+                    return "id";
+                }
+                else if (node.name == "true" || node.name == "false" || node.parent.name == "!=" || node.parent.name == "==") {
+                    console.log("Boolean Recognized for " + node.name);
+                    return "boolean";
                 }
                 else {
-                    // Return ID to notify analyze to add Used entry for ID in our Symbol Table
-                    console.log("ID Recognized for " + node.name);
-                    type = "id";
+                    return -1;
                 }
             }
-            return type;
+            //return type;
         };
         SemanticAnalyzer.prototype.emitEntry = function (type, name, info) {
             var data;
@@ -585,7 +600,7 @@ var CSCompiler;
                     break;
             }
             // Update Warning List + Output to User
-            this.errors.push({ type: type, name: name, line: info.line, col: info.col });
+            this.warnings.push({ type: type, name: name, line: info.line, col: info.col });
             _Log.output({ level: "WARN", data: data });
         };
         /**
@@ -615,6 +630,34 @@ var CSCompiler;
             // Update Error List + Output to User
             this.errors.push({ type: type, name: name, line: info.line, col: info.col });
             _Log.output({ level: "ERROR", data: data });
+        };
+        /**
+         * scan(node)
+         * - Scan is used to find any warnings that we need
+         *   to notify to our User. This is the final step
+         *   of Semantic Analysis. Starts at Root.
+         */
+        SemanticAnalyzer.prototype.scan = function (node) {
+            // Get Table Reference for Node
+            var table = node.table;
+            console.log("Scan Current Table " + table);
+            for (var i = 0; i < table.keys.length; i++) {
+                // Get Direct Reference to Table Entry Values
+                var entry = table.values[i];
+                if (entry.declared.status == true && entry.initalized.length > 1 && entry.used.length < 1) {
+                    // EmitWarning for Initalized but Unused Identifier + Update Warnings List
+                    this.emitWarning("UNUSED-INIT", table.keys[i], { line: entry.declared.line, col: entry.declared.col });
+                }
+                else if (entry.declared.status = true && entry.used.length < 1) {
+                    // EmitWarning for Undeclared Identifier + Update Warnings List
+                    this.emitWarning("UNUSED-DEC", table.keys[i], { line: entry.declared.line, col: entry.declared.col });
+                }
+            }
+            if (node.children != 0) {
+                for (var child in node.children) {
+                    this.scan(node.children[child]);
+                }
+            }
         };
         return SemanticAnalyzer;
     }());
