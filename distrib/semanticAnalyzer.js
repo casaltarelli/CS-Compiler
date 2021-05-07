@@ -640,7 +640,6 @@ var CSCompiler;
         SemanticAnalyzer.prototype.scan = function (node) {
             // Get Table Reference for Node
             var table = node.table;
-            console.log("Scan Current Table " + table);
             for (var i = 0; i < table.keys.length; i++) {
                 // Get Direct Reference to Table Entry Values
                 var entry = table.values[i];

@@ -81,17 +81,14 @@ module CSCompiler {
             }
         }
 
-        public toString(s) {
+        public toString() {
             var data = "";
             for (var k = 0; k < this.keys.length; k++) {
                 // Format Values
-                var scope = s.padEnd(5, " ");
-                var key = this.keys[k].padEnd(5, " ");
-                var type = this.values[k].type.padEnd(5, " ");
-                var line = this.values[k].declared.line.padEnd(5, " ");
-                var col = this.values[k].declared.col.padEnd(5, " ");
-
-                data += "| " + scope + "| " + key + "| " + type + "| " + line + "| " + col + "| ";
+                data += "| " + padEnd(this.keys[k], 5, " ") 
+                    + "| " + padEnd(this.values[k].type, 8, " ")
+                    + "| " + padEnd(this.values[k].declared.line.toString(), 5, " ")
+                    + "| " + padEnd(this.values[k].declared.col.toString(), 4, " ") + "|\n";
             }
 
             return data;

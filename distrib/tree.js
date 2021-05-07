@@ -145,28 +145,29 @@ var CSCompiler;
             // Return String Representation
             return data;
         };
-        Tree.prototype.toStringTable = function (node) {
+        Tree.prototype.toStringTable = function () {
             // Initalize Data for Symbol Table(s)
             var data = "";
-            // Create Symbol Table Header
-            data += "\n-------------------------\n";
-            data += "       Scope: " + node.scope + "\n";
-            data += "-------------------------\n";
-            // Output Table
-            data += "Key | Type | Scope | Line | Col\n";
-            for (var i = 0; i < node.table.keys.length; i++) {
-                var key = node.table.keys[i];
-                var type = node.table.values[i].type;
-                var scope = node.scope;
-                var line = node.table.values[i].declared.line;
-                var col = node.table.values[i].declared.col;
-                data += key + "  " + type + " " + scope + " " + line + " " + col + "\n\n";
-            }
-            if (node.children) {
-                for (var child in node.children) {
-                    data += node[child].toStringTable;
+            function collect(node) {
+                // Create Symbol Table Header
+                data += "\n|----------    " + padEnd(node.scope.toString(), 3, " ") + "  ----------|\n";
+                data += "|-----------------------------|\n";
+                data += "| " + padEnd("key", 5, " ") + "| "
+                    + padEnd("type", 8, " ") + "| "
+                    + padEnd("line", 5, " ") + "| "
+                    + padEnd("col", 4, " ") + "|\n";
+                data += node.table.toString()
+                    + "|-----------------------------|\n";
+                if (node.children.length) {
+                    for (var c in node.children) {
+                        collect(node.children[c]);
+                    }
                 }
             }
+            // Make Initial Call to Collect
+            collect(this.root);
+            data += "|-----------------------------|\n";
+            return data;
         };
         return Tree;
     }());

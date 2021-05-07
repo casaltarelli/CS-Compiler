@@ -96,17 +96,18 @@ var CSCompiler;
                                 _Log.output({ level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
                                 _Log.output({ level: "", data: _SemanticAnalyzer.ast.toString() });
                                 // Validate Successful Semantic Analysis -- Output Symbol Table
-                                // if (_SemanticAnalyzer.errors.length > 0) {
-                                //     _Log.output({level: "", data: "--------------------"});
-                                //     _Log.output({level: "INFO", data: "Compliation Stopped due to Semantic Analysis error(s)..."});
-                                //     break out;   
-                                // } else {
-                                //     // Add Validated Symbol Table to Global Reference
-                                //     _SymbolTables.push(_SemanticAnalyzer.ast);
-                                //     // Output Symbol Table to Log
-                                //     _Log.output({level: "", data: "Symbol Table generated for program " + _PID + "\n" });
-                                //     // TODO:- Implement tableToString()
-                                // }
+                                if (_SemanticAnalyzer.errors.length > 0) {
+                                    _Log.output({ level: "", data: "--------------------" });
+                                    _Log.output({ level: "INFO", data: "Compliation Stopped due to Semantic Analysis error(s)..." });
+                                    break out;
+                                }
+                                else {
+                                    // Add Validated Symbol Table to Global Reference
+                                    _SymbolTables.push(_SemanticAnalyzer.ast);
+                                    // Output Symbol Table to Log
+                                    _Log.output({ level: "", data: "Symbol Table generated for program " + _PID });
+                                    _Log.output({ level: "", data: _SemanticAnalyzer.symbolTable.toStringTable() });
+                                }
                                 break;
                             default:
                                 // This should never happen, but you never know for sure

@@ -54,3 +54,12 @@ var verboseToggle = function() {
       toggle.style.borderColor = '#38B000';
    }
 }
+
+// String Padding
+var padEnd = function(s, targetLength, padString) {
+   while (s.length < targetLength) {
+      s += padString;
+   }
+
+   return s;
+}
