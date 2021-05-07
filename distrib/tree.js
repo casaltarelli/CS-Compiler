@@ -27,10 +27,12 @@ var CSCompiler;
         Tree.prototype.addNode = function (type, name, data) {
             // Create Node Object
             var node = {
+                type: type,
                 name: name,
                 children: [],
                 parent: {},
-                data: { line: data.line, col: data.col }
+                data: data,
+                visited: false
             };
             // Check if New Node is Root
             if (!this.root) {
@@ -42,11 +44,38 @@ var CSCompiler;
                 node.parent = this.current;
                 this.current.children.push(node);
                 // Validate Type to determine if we need to update our Current
-                if (type == "branch") {
+                if (type == "Non-Terminal") {
                     // Update Current Pointer
                     this.current = node;
                 }
             }
+        };
+        /**
+         * addTableNode(scope)
+         * - AddTableNode allows for us to create a new symbol table
+         *   according to the respective scope we are on while
+         *   producing our AST definitions.
+         */
+        Tree.prototype.addTableNode = function (scope) {
+            // Create Table Node Object
+            var node = {
+                scope: scope,
+                table: new CSCompiler.SymbolTable(),
+                parent: {},
+                children: []
+            };
+            // Check for Root
+            if (!this.root) {
+                this.root = node;
+                this.current = node;
+            }
+            else {
+                // Otherwise, we are dealing with an inner-scope so our Current is the Parent
+                node.parent = this.current;
+                this.current.children.push(node);
+            }
+            // Update Current Pointer for new scope
+            this.current = node;
         };
         /**
          * ascendTree()
@@ -67,6 +96,23 @@ var CSCompiler;
             }
         };
         /**
+         * ascendTable()
+         * - Extension of ascendTree used for our Symbol
+         *   Table definition.
+         */
+        Tree.prototype.ascendTable = function () {
+            // Validate our Current Table isn't Root
+            if (this.current.scope != this.root.scope) {
+                // Check if Parent Exists on Current Table
+                if (this.current.parent) {
+                    this.current = this.current.parent;
+                }
+            }
+            else {
+                console.log("Attempt to ascend when on Table Root");
+            }
+        };
+        /**
          * toString()
          * - ToString gives us the functionality to
          *   convert our Tree definitions into Strings
@@ -81,22 +127,48 @@ var CSCompiler;
                 for (var i = 0; i < depth; i++) {
                     data += "-";
                 }
-                // Check if Node contains Children   [Leaf]
+                // Check if Node contains Children   [Terminal]
                 if (node.children.length) {
-                    // Add Leaf Node to Data
+                    // Add Terminal Node to Data
                     data += "<" + node.name + ">\n";
-                    // Recursively Expand Leafs
+                    // Recursively Expand Non-Terminals + Terminals
                     for (var i = 0; i < node.children.length; i++) {
                         expand(node.children[i], depth + 1);
                     }
                 }
-                else { //                         [Branch]
+                else { //                         [Non-Terminal]
                     data += "[" + node.name + "]\n";
                 }
             }
             // Make Initial Call to Expand from our Root Node
             expand(this.root, 0);
             // Return String Representation
+            return data;
+        };
+        Tree.prototype.toStringTable = function () {
+            // Initalize Data for Symbol Table(s)
+            var data = "";
+            function collect(node) {
+                // Create Symbol Table Header
+                data += "\n|----------    " + padEnd(node.scope.toString(), 3, " ") + "  ----------|\n";
+                data += "|-----------------------------|\n";
+                data += "| " + padEnd("key", 5, " ") + "| "
+                    + padEnd("type", 8, " ") + "| "
+                    + padEnd("line", 5, " ") + "| "
+                    + padEnd("col", 4, " ") + "|\n";
+                data += node.table.toString()
+                    + "|-----------------------------|\n";
+                if (node.children.length) {
+                    for (var c in node.children) {
+                        if (node.children[c].table.keys.length) {
+                            collect(node.children[c]);
+                        }
+                    }
+                }
+            }
+            // Make Initial Call to Collect
+            collect(this.root);
+            data += "|-----------------------------|\n";
             return data;
         };
         return Tree;

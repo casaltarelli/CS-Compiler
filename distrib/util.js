@@ -19,7 +19,7 @@ var closeModal = function () {
 // Test Categories Functionality
 var show = function (category) {
     console.log("Param Given: " + category);
-    var categories = ["LEX", "PAR"];
+    var categories = ["LEX", "PAR", "SMA"];
     for (var i = 0; i < categories.length; i++) {
         var id = categories[i] + "-cases";
         console.log(id);
@@ -31,7 +31,7 @@ var show = function (category) {
         else {
             document.getElementById(id).style.display = 'none';
             document.getElementById(categories[i]).style.color = "#606060";
-            document.getElementById(categories[i]).style.border = "none";
+            document.getElementById(categories[i]).style.borderBottom = "1px solid #F7F6FB";
         }
     }
 };
@@ -46,4 +46,11 @@ var verboseToggle = function () {
         _Verbose = true;
         toggle.style.borderColor = '#38B000';
     }
+};
+// String Padding
+var padEnd = function (s, targetLength, padString) {
+    while (s.length < targetLength) {
+        s += padString;
+    }
+    return s;
 };

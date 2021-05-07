@@ -35,7 +35,23 @@ var _SetTest = function(index, name) {
         + '        b = 2 + c\n\n    }\n        }$\n    {\n  print("whats up doc") \n }$',
         '{\n    int c\n    c = 7 +\n    print(c)\n  }$',
         '{\n    string c c = "hello"\n    print(\nc\n}$',
-        '\n{\n    int a\n    string c\n    if (a != c) {\n        print("false")\n    }\n\n$'
+        '\n{\n    int a\n    string c\n    if (a != c) {\n        print("false")\n    }\n\n$',
+        '{\n    int a\n    a = 1\n    print(a)\n    boolean b\n    b = true\n    print(b)\n\n    {\n'
+        + '        int a\n        a = 2\n        print(a)\n    }\n\n    {\n        int a\n        a = 3\n' 
+        + '        print(a)\n    }\n\n\n}$',
+        '{\n    string d\n    d = "hello"\n\n    boolean b\n    b = true\n\n    if(b == true) {\n        '
+        + 'print("world")\n    }\n}$',
+        '{\n    boolean b\n    b = true\n    string d\n    d = "sleep"\n\n    boolean c\n    c = (d != "hello")\n\n'
+        + '    if (c == (false != b)) {\n        print(b)\n    }\n\n}$',
+        '{\n\n    int c\n    c = 2\n\n    while(c != 8) {\n        c = 2 + c\n        print("how are you")\n'
+        + '    }\n}$\n\n\n {\n    int b\n    b = 3 + 2\n\n    if (b == 5) {\n        print("im good")\n    }\n}$',
+        '{\n    int a\n    a = 3\n    boolean b\n    b = true\n    int c\n    c = 8\n\n    if (b == true) {\n        if (c != 8) {\n'
+        +'            print("hi")\n\n        }\n    }\n}$',
+        '{\n    int a\n\n    boolean b\n    b = true\n    int c\n    c = 8\n\n if( b == true) {\n   ',
+        '{\n    int a\n    a = 2\n\n    a = 2 + c\n\n}$',
+        '{\n    int a\n    a = 5\n\n    string b\n    b = "cscompiler"\n\n    boolean a\n    }$',
+        '{\n    string a\n    int b\n\n    a = "hello"\n    b = 3\n\n if (a == 3) {\n        int b\n'
+        + '        b = 2\n    }\n}$'
     ];
 
     // Populate Editor + Output to Log
