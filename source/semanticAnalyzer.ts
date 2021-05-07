@@ -43,8 +43,6 @@ module CSCompiler {
         public build(node) {
             var essentialFlag = false;
             var operationFlag = false;
-            console.log("-------------------------");
-            console.log("BUILD: Current Node: " + node.name);
 
             if (this.analyzing == true) {
                 // Update Visited Flag on Node 
@@ -64,18 +62,15 @@ module CSCompiler {
                         if ((this.operators.map((o) => { return o.name }).indexOf(node.children[i].name) > -1)) {
                             operationFlag = true;
                             operationIndex = i;
-                            //console.log("BUILD: Operation Production Found!");
                         }
                     }
 
                     if (!(operationFlag)) {
                         // Add Node to AST Definition
                         this.ast.addNode("Non-Terminal", node.name, {line: node.data.line, col: node.data.col});
-                        //console.log("BUILD: Production Node Created in AST: " + node.name);
 
                         // Check for Node "Block" -- Update Symbol Table Scope
                         if (node.name == "Block") {
-                            //console.log("BUILD: Created New Symbol Table Child!");
                             this.scope++;
                             this.symbolTable.addTableNode(this.scope);
                         }
@@ -84,16 +79,9 @@ module CSCompiler {
                     // Check if Production requires us to collect Terminal(s) or SubTree
                     if (production.seek) {
                         if (operationFlag) {
-                            //console.log("BUILD: Entering SeekTree");
                             this.seekTree(node, operationIndex);
                         } else {
-                            //console.log("BUILD: Entering SeekTerminal");
                             var set = this.seekTerminal(node, [], true);
-
-                            // console.log("BUILD: Set Returned from SeekTerminal: ");
-                            // for (var s in set) {
-                            //     console.log(" - " + set[s].name);
-                            // }
 
                             // Collect Non-Terminals Collected -- Check Set for Quote Instance [String]
                             var stringIndex = null;
@@ -102,7 +90,6 @@ module CSCompiler {
                                 if (set[terminal].name != "\"") {
                                     // Add Terminal to AST
                                     this.ast.addNode("Terminal", set[terminal].name, {line: set[terminal].data.line, col: set[terminal].data.col});
-                                    //console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
                                 } else {
                                     stringIndex = terminal;
                                     break out;
@@ -120,7 +107,6 @@ module CSCompiler {
 
                                 // Add Terminal to AST Defintion
                                 this.ast.addNode("Terminal", set.substring(stringIndex), {line: line, col: col});
-                                //console.log("BUILD: Terminal Symbol added to AST: " + set.substring(stringIndex));
                             }
                         }
                     }
@@ -129,7 +115,6 @@ module CSCompiler {
                 // Proceed to Children for current Node
                 for (var child in node.children) {
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
-                        //console.log("BUILD: Call for Non-Terminal " + node.children[child].name);
                         this.build(node.children[child]);
                     }
                 }
@@ -139,7 +124,6 @@ module CSCompiler {
                     // Ascend to Parent Table
                     if (node.name == "Block") {
                         this.symbolTable.ascendTable();
-                        //console.log("BUILD: Ascended Symbol Table to Parent!");
                     } else {
                         // Analyze our AST for Symbol Table Updates
                         this.analyze(this.ast.current);
@@ -161,7 +145,6 @@ module CSCompiler {
             if (first) {
                 for (var child in node.children) {
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
-                        //console.log("SEEKTERMINAL: FIRST Non-Terminal Found: " + node.children[child].name);
                         set.push(this.seekTerminal(node.children[child], set));
                     }
                 }
@@ -169,25 +152,19 @@ module CSCompiler {
                 // We are already past the first set of children, collect all Terminal Nodes found
                 for (var child in node.children) {
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visted)) {
-                        //console.log("SEEKTERMINAL: Non-Terminal Found: " + node.children[child].name);
                         // Validate Child(s) Production doesn't contain Operator Child
                         var operatorFlag = false;
                         for (var c in node.children[child].children) {
                             if ((this.operators.map((o) => { return o.name }).indexOf(node.children[child].children[c].name) > -1)) {
                                 operatorFlag = true;
-                                //console.log("SEEKTERMIAL: Operator Child for " + node.children[child].children[c].name)
                             }
                         }
 
                         if (!(operatorFlag)) {
-                            //console.log("SEEKTERMINAL: SeekTerminal on Non-Terminal Found: " + node.children[child].name);
-                            //console.log("SEEKTERMINAL: Node marked as visited " + node.name);
                             node.visited = true;
                             set.push(this.seekTerminal(node.children[child], set));
                         }
                     } else if (!(node.children[child].visited)) {
-                        //console.log("SEEKTERMINAL: Push Terminal Found: " + node.children[child].name);
-                        //console.log("SEEKTERMINAL: Node marked as visited " + node.name);
                         node.visited = true;
                         set.push(node.children[child]);    
                     }
@@ -209,28 +186,21 @@ module CSCompiler {
          */
         public seekTree(node, index) {
             // Get Operator for Root Node of Subtree + Update Visited Flag
-            //console.log("SEEKTREE: Node marked as visited " + node.children[index].name);
             node.children[index].visited = true;
             var root = node.children[index].children[0]; // Get Value of Operator
 
             // Add Root to Current AST Definition
             this.ast.addNode("Non-Terminal", root.name, {line: root.data.line, col: root.data.col});
-            //console.log("SEEKTREE: Non-Terminal added to AST Definition: " + root.name);
 
             // Collect Terminals
             for (var child in node.children) {
                 if (node.children[child].name != root.name) {
-                    //console.log("SEEKTREE: Current Child [" + node.children[child].name + "] Visited Marked as " + node.children[child].visited);
                     if (node.children[child].type == "Non-Terminal" && !(node.children[child].visited)) {
                         // Update Visited Flag + Seek Terminal Children (it's not as creepy as it sounds)
-                        // node.children[child].visited = true;
-                        //console.log("SEEKTREE: Non-Terminal Child [" + node.children[child].name + "] marked as visited");
                         var set;
                         if (node.children[child].children.length > 1) {
-                            //console.log("SEEKTREE: Entering SeekTerminal [First]")
                             set = this.seekTerminal(node.children[child], [], true);
                         } else {
-                            //console.log("SEEKTREE: Entering SeekTerminal");
                             set = this.seekTerminal(node.children[child], []);
                         }
                         
@@ -241,7 +211,6 @@ module CSCompiler {
                         var stringIndex = null;
                         out:
                         for (var terminal in set) {
-                            //console.log("BUILD: Terminal Symbol added to AST: " + set[terminal].name);
                             if (set[terminal].name != "\"") {
                                 this.ast.addNode("Terminal", set[terminal].name, {line: set[terminal].data.line, col: set[terminal].data.col});
                             } else {
@@ -273,17 +242,11 @@ module CSCompiler {
          *   Boolean flag symbolizing success or fail.
          */
         public analyze(node, type?) {
-            console.log("ANALUZE: Current Scope " + this.symbolTable.current.scope)
-            console.log("ANALYZE: Current Node " + node.name);
-            for (var n in node.children) {
-                console.log("ANALYZE: Children [Child]: " + node.children[n].name);
-            }
             var valid = false;
 
             // Update our Symbol Table based on Node
             switch(node.name) {
                 case "VarDecl":
-                    console.log("ANALYZE: Entering VarDecl");
                     // Get Type + Identifier
                     var type = node.children[0];
                     var id = node.children[1];
@@ -311,7 +274,6 @@ module CSCompiler {
                     break;
 
                 case "AssignmentStatement":
-                    console.log("ANALYZE: Entering Assignment Statement");
                     // Get ID + Expr
                     var id = node.children[0];
                     var expr = node.children[1];
@@ -320,7 +282,6 @@ module CSCompiler {
 
                     // Get ID Reference in SymbolTable
                     var reference = this.symbolTable.current.table.get(id.name);
-                    console.log("ANALYZE: Reference value returned after SymbolTable GET " + JSON.stringify(reference));
 
                     if (reference == -1) {
                         while (this.symbolTable.current.parent != null && reference == -1) {
@@ -329,12 +290,10 @@ module CSCompiler {
                     }
 
                     if (reference != -1) {
-                        console.log("Reference found in SymbolTable")
                         // Verify Decleration of ID
                         if (reference.declared.status == true) {
                             // Check for Inner-Operator instance
                             if (!(expr.children.length)) {
-                                console.log("Found Expr doesn't contain Operator Node!" + expr.name);
                                 // Check if Expr is ID
                                 var exprType = this.getType(expr); 
 
@@ -389,7 +348,6 @@ module CSCompiler {
                                     }
                                 }
                             } else {
-                                console.log("Children realized for " + expr.name);
                                 if ((expr.name == "==" || expr.name == "!=") && "boolean" == reference.type) {
                                     // Push New Init Attribute for ID + EmitEntry 
                                     reference.initalized.push({line: id.data.line, col: id.data.col});
@@ -459,19 +417,14 @@ module CSCompiler {
                 case "==":
                 case "!=":  // Utilize Waterfall for Operators
                 case "+":
-                    console.log("ANALYZE: Entering Operator");
                     // Get Exprs
                     var exprs = [node.children[0], node.children[1]];
                     var types = [];
 
                     // Get Types for Exprs
                     for (var e in exprs) {
-                        console.log("ANALYZE: Operator - Current Expr [" + exprs[e].name + "]");
-                        console.log("ANALYZE: Operator - Result of Children [" + exprs[e].children + "]");
                         // Check if Expr is Inner-Operator instance
                         if (!(exprs[e].children.length)) {
-                            console.log("Recognized Empty List");
-                            console.log("Result of Expr Reference [" + exprs[e].name + "]");
                             // Get Type
                             var tempType = this.getType(exprs[e]);
 
@@ -517,7 +470,6 @@ module CSCompiler {
                         } else {
                             // Check for Boolean Operator -- Override Type on Child Type
                             if (exprs[e].name == "==" || exprs[e].name == "!=") {
-                                console.log("Recognized Parent Operator " + exprs[e].name);
                                 types.push("boolean");
                             } else if (this.getType(exprs[e].children[0]) == "id") {
                                 // Get ID Reference
@@ -545,14 +497,8 @@ module CSCompiler {
                         }
                     }
 
-                    console.log("OPERATOR: Types Found");
-                    for (var t in types) {
-                        console.log(" - " + types[t]);
-                    }
-
                     // Compare Types for Operation
                     if (types[0] != types[1]) {
-                        console.log("Types did not equal");
                         // EmitError for Operator Type Mismatch
                         this.emitError("OPERATOR", exprs[0].name, {line: exprs[0].data.line, col: exprs[0].data.col});
                     }
@@ -572,28 +518,19 @@ module CSCompiler {
          *   String, Digit, and ID
          */
         public getType(node) {
-            console.log("GETTYPE: Getting for " + node.name);
-            //var type = "";
-
             if (!isNaN(node.name)) {
-                console.log("Int Recognized for " + node.name);
                 return "int"; 
             } else {
                 if (node.name.indexOf('"') > -1) {
-                    console.log("String Recognized for " + node.name);
                     return "string";
                 } else if (node.name.length == 1) {
-                    console.log("ID Recognized for " + node.name);
                     return "id";    
                 } else if (node.name == "true" || node.name == "false" || node.parent.name == "!=" || node.parent.name == "==") {
-                    console.log("Boolean Recognized for " + node.name);
                     return "boolean"; 
                 } else {
                     return -1; 
                 }
             }
-
-            //return type;
         }
 
         public emitEntry(type, name, info) {
