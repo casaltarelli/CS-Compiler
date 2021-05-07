@@ -169,7 +169,10 @@ module CSCompiler {
 
                 if (node.children.length) {
                     for (var c in node.children) {
-                        collect(node.children[c]);
+                        if (node.children[c].table.keys.length) {
+                            collect(node.children[c]);
+                        }
+                        
                     }
                 }
 

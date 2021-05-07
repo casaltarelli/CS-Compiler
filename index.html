@@ -65,6 +65,7 @@
                                 <ul class="test-types-menu">
                                     <li><a id="LEX" onclick="show('LEX')">LEX</a></li>
                                     <li><a id="PAR" onclick="show('PAR')">PAR</a></li>
+                                    <li><a id="SMA" onclick="show('SMA')">SMA</a></li>
                                 </ul>
                                 <div class="test-list-container">
                                     <ul id="LEX-cases" class="test-list">
@@ -87,6 +88,17 @@
                                         <li><a onclick="_SetTest(14, 'Incomplete IntExpr')"><span class="fail">X </span>Incomplete IntExpr Test</a></li>
                                         <li><a onclick="_SetTest(15, 'Incomplete Print Test')"><span class="fail">X </span>Incomplete Print Test</a></li>
                                         <li><a onclick="_SetTest(16, 'Incomplete Block Test')"><span class="fail">X </span>Incomplete Block Test</a></li>
+                                    </ul>
+                                    <ul id="SMA-cases" class="test-list">
+                                        <li><a onclick="_SetTest(17, 'Nested Decleration Test')"><span class="success">&#10003 </span>Nested Decleration Test</a></li>
+                                        <li><a onclick="_SetTest(18, 'Out of Scope Reference')"><span class="success">&#10003 </span>Out of Scope Reference Test</a></li>
+                                        <li><a onclick="_SetTest(19, 'Variable Addition Test')"><span class="success">&#10003 </span>Operator Test</a></li>
+                                        <li><a onclick="_SetTest(20, 'Multiple Programs Test')"><span class="success">&#10003 </span>Multiple Program Test</a></li> 
+                                        <li><a onclick="_SetTest(21, 'Unused Variable Test')"><span class="warning">/ </span>Unused Variable Test</a></li>
+                                        <li><a onclick="_SetTest(21, 'Uninitalized Variable Test')"><span class="warning">/ </span>Initalized Unused Variable Test</a></li>
+                                        <li><a onclick="_SetTest(23, 'Undeclared Test')"><span class="fail">X </span>Undeclared Test</a></li>
+                                        <li><a onclick="_SetTest(24, 'Redeclared Test')"><span class="fail">X </span>Redeclared Test</a></li>
+                                        <li><a onclick="_SetTest(25, 'Invalid Type Test')"><span class="fail">X </span>Invalid Type Test</a></li>
                                     </ul>
                                 </div>
                             </div> <!-- Modal Tests Content -->

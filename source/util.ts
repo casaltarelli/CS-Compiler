@@ -23,7 +23,7 @@ var closeModal = function() {
 var show = function(category) {
    console.log("Param Given: " + category);
 
-   var categories = ["LEX", "PAR"];
+   var categories = ["LEX", "PAR", "SMA"];
 
    for (var i = 0; i < categories.length; i++) {
       var id = categories[i] + "-cases";
@@ -36,7 +36,7 @@ var show = function(category) {
       } else {
          document.getElementById(id).style.display = 'none';
          document.getElementById(categories[i]).style.color = "#606060";
-         document.getElementById(categories[i]).style.border = "none";
+         document.getElementById(categories[i]).style.borderBottom = "1px solid #F7F6FB";
       }
    }
 

@@ -103,14 +103,16 @@ module CSCompiler {
                                 // Add Validated AST to Global Reference + Scan for Warnings
                                 _ASTs.push(_SemanticAnalyzer.ast);
                                 _SemanticAnalyzer.scan(_SemanticAnalyzer.symbolTable.root);
-
+                                
                                 // Announce Completion
                                 _Log.output({level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.warnings.length + " WARNING(S) and " 
                                     + _SemanticAnalyzer.errors.length + " ERROR(S)\n"});
 
                                 // Output AST to Log
-                                _Log.output({level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
-                                _Log.output({level: "", data: _SemanticAnalyzer.ast.toString()});
+                                if (_SemanticAnalyzer.analyzing) {
+                                    _Log.output({level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
+                                    _Log.output({level: "", data: _SemanticAnalyzer.ast.toString()});
+                                }
 
                                 // Validate Successful Semantic Analysis -- Output Symbol Table
                                 if (_SemanticAnalyzer.errors.length > 0) {

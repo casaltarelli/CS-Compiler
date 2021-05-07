@@ -93,8 +93,10 @@ var CSCompiler;
                                 _Log.output({ level: "INFO", data: "Semantic Analysis Complete. " + _SemanticAnalyzer.warnings.length + " WARNING(S) and "
                                         + _SemanticAnalyzer.errors.length + " ERROR(S)\n" });
                                 // Output AST to Log
-                                _Log.output({ level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
-                                _Log.output({ level: "", data: _SemanticAnalyzer.ast.toString() });
+                                if (_SemanticAnalyzer.analyzing) {
+                                    _Log.output({ level: "", data: "Abstract Syntax Tree generated for program " + _PID + "\n" });
+                                    _Log.output({ level: "", data: _SemanticAnalyzer.ast.toString() });
+                                }
                                 // Validate Successful Semantic Analysis -- Output Symbol Table
                                 if (_SemanticAnalyzer.errors.length > 0) {
                                     _Log.output({ level: "", data: "--------------------" });
