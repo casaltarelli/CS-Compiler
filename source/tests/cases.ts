@@ -40,7 +40,7 @@ var _SetTest = function(index, name) {
         + '        int a\n        a = 2\n        print(a)\n    }\n\n    {\n        int a\n        a = 3\n' 
         + '        print(a)\n    }\n\n\n}$',
         '{\n    string d\n    d = "hello"\n\n    boolean b\n    b = true\n\n    if(b == true) {\n        '
-        + 'print("world")\n    }\n}$',
+        + 'd = "world"\n    }\n}$',
         '{\n    boolean b\n    b = true\n    string d\n    d = "sleep"\n\n    boolean c\n    c = (d != "hello")\n\n'
         + '    if (c == (false != b)) {\n        print(b)\n    }\n\n}$',
         '{\n\n    int c\n    c = 2\n\n    while(c != 8) {\n        c = 2 + c\n        print("how are you")\n'

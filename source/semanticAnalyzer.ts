@@ -284,7 +284,7 @@ module CSCompiler {
                     var reference = this.symbolTable.current.table.get(id.name);
 
                     if (reference == -1) {
-                        while (this.symbolTable.current.parent != null && reference == -1) {
+                        while (this.symbolTable.current.parent.table != undefined && reference == -1) {
                             reference = this.symbolTable.current.parent.table.get(id.name);
                         }
                     }
@@ -303,7 +303,7 @@ module CSCompiler {
 
                                     // Check Parent(s) for ID if not found in Current
                                     if (tempReference == -1) {
-                                        while (this.symbolTable.current.parent != null && tempReference == -1) {
+                                        while (this.symbolTable.current.parent.table != undefined && tempReference == -1) {
                                             tempReference = this.symbolTable.current.parent.table.get(expr.name);
                                         }
                                     }
@@ -385,7 +385,7 @@ module CSCompiler {
 
                         // Check Parent(s) for ID if not found in Current
                         if (reference == -1) {
-                            while (this.symbolTable.current.parent != null && reference == -1) {
+                            while (this.symbolTable.current.parent.table != undefined && reference == -1) {
                                 reference = this.symbolTable.current.parent.table.get(node.children[0].name);
                             }
                         }
@@ -477,7 +477,7 @@ module CSCompiler {
 
                                 // Check Parent(s) for ID if not found in Current
                                 if (tempReference == -1) {
-                                    while (this.symbolTable.current.parent != null && tempReference == -1) {
+                                    while (this.symbolTable.current.parent.table != undefined && tempReference == -1) {
                                         tempReference = this.symbolTable.current.parent.table.get(expr[e].children[0].name);
                                     }
                                 }
@@ -523,7 +523,7 @@ module CSCompiler {
             } else {
                 if (node.name.indexOf('"') > -1) {
                     return "string";
-                } else if (node.name.length == 1) {
+                } else if (node.name.length == 1 && node.name != '+') {
                     return "id";    
                 } else if (node.name == "true" || node.name == "false" || node.parent.name == "!=" || node.parent.name == "==") {
                     return "boolean"; 
