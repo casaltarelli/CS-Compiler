@@ -573,6 +573,7 @@ module CSCompiler {
 
                 case "UNUSED-DEC":
                     data = "Variable Declared but never used [ " + name + " ] on line: " + info.line + " col: " + info.col;
+                    console.log("Hit on Usused!");
                     break;
 
                 case "UNUSED-INIT":
@@ -638,15 +639,20 @@ module CSCompiler {
             // Get Table Reference for Node
             var table = node.table;
 
+            console.log("Entering Seek");
+
             for (var i = 0; i < table.keys.length; i++) {
                 // Get Direct Reference to Table Entry Values
                 var entry = table.values[i];
+
+                console.log("ID Used Length: " + entry.used.length);
+                console.log(JSON.stringify(entry.used));
                 
                 if (entry.declared.status == true && entry.initalized.length >= 1 && entry.used.length < 1) {
                     // EmitWarning for Initalized but Unused Identifier + Update Warnings List
                     this.emitWarning("UNUSED-INIT", table.keys[i], {line: entry.declared.line, col: entry.declared.col});
-                } else if (entry.declared.status = true && entry.used.length < 1) {
-                    // EmitWarning for Undeclared Identifier + Update Warnings List
+                } else if (entry.declared.status = true && entry.used.length < 1 && entry.initalized.length < 1) {
+                    // EmitWarning for Unused Identifier + Update Warnings List
                     this.emitWarning("UNUSED-DEC", table.keys[i], {line: entry.declared.line, col: entry.declared.col});
                 } 
             }
