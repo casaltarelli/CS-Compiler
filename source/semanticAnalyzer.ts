@@ -73,6 +73,7 @@ module CSCompiler {
                         if (node.name == "Block") {
                             this.scope++;
                             this.symbolTable.addTableNode(this.scope);
+                            console.log({});
                         }
                     }
 
@@ -241,9 +242,7 @@ module CSCompiler {
          *   based on the AST Node given. Will return a 
          *   Boolean flag symbolizing success or fail.
          */
-        public analyze(node, type?) {
-            var valid = false;
-
+        public analyze(node) {
             // Update our Symbol Table based on Node
             switch(node.name) {
                 case "VarDecl":
@@ -264,9 +263,6 @@ module CSCompiler {
 
                         // Announce Symbol Table Entry
                         this.emitEntry("DECL", id.name, {type: type.name, line: type.data.line, col: type.data.col});
-
-                        // Update Valid Flag
-                        valid = true;
                     } else {
                         // EmitError for Redeclared ID
                         this.emitError("REDECLARED", id.name, {line: type.data.line, col: type.data.col})
@@ -278,16 +274,8 @@ module CSCompiler {
                     var id = node.children[0];
                     var expr = node.children[1];
 
-                    console.log("Expr is set to [" + node.children[1].name + "]");
-
                     // Get ID Reference in SymbolTable
-                    var reference = this.symbolTable.current.table.get(id.name);
-
-                    if (reference == -1) {
-                        while (this.symbolTable.current.parent.table != undefined && reference == -1) {
-                            reference = this.symbolTable.current.parent.table.get(id.name);
-                        }
-                    }
+                    var reference = this.getReference(id.name);
 
                     if (reference != -1) {
                         // Verify Decleration of ID
@@ -299,14 +287,7 @@ module CSCompiler {
 
                                 if (exprType == "id") {
                                     // Get ID Reference
-                                    var tempReference = this.symbolTable.current.table.get(expr.name);
-
-                                    // Check Parent(s) for ID if not found in Current
-                                    if (tempReference == -1) {
-                                        while (this.symbolTable.current.parent.table != undefined && tempReference == -1) {
-                                            tempReference = this.symbolTable.current.parent.table.get(expr.name);
-                                        }
-                                    }
+                                    var tempReference = this.getReference(expr.name);
 
                                     if (tempReference != -1) {
                                         // Check Decleration Attribute
@@ -381,14 +362,7 @@ module CSCompiler {
                     // Check if Child Node is ID
                     if (this.getType(node.children[0]) == "id") {
                         // Get Reference
-                        var reference = this.symbolTable.current.table.get(node.children[0].name);
-
-                        // Check Parent(s) for ID if not found in Current
-                        if (reference == -1) {
-                            while (this.symbolTable.current.parent.table != undefined && reference == -1) {
-                                reference = this.symbolTable.current.parent.table.get(node.children[0].name);
-                            }
-                        }
+                        var reference = this.getReference(node.children[0].name);
 
                         if (reference != -1) {
                             // Verify Decleration of ID
@@ -430,14 +404,7 @@ module CSCompiler {
 
                             if (tempType == "id") {
                                 // Get ID Reference
-                                var reference = this.symbolTable.current.table.get(exprs[e].name);
-
-                                // Check Parent(s) for ID if not found in Current
-                                if (reference == -1) {
-                                    while (this.symbolTable.current.parent.table != undefined && reference == -1) {
-                                        reference = this.symbolTable.current.parent.table.get(exprs[e].name);
-                                    }
-                                }
+                                var reference = this.getReference(exprs[e].name);
 
                                 // Validate Reference
                                 if (reference != -1) {
@@ -473,14 +440,7 @@ module CSCompiler {
                                 types.push("boolean");
                             } else if (this.getType(exprs[e].children[0]) == "id") {
                                 // Get ID Reference
-                                var tempReference = this.symbolTable.current.table.get(exprs[e].children[0].name);
-
-                                // Check Parent(s) for ID if not found in Current
-                                if (tempReference == -1) {
-                                    while (this.symbolTable.current.parent.table != undefined && tempReference == -1) {
-                                        tempReference = this.symbolTable.current.parent.table.get(expr[e].children[0].name);
-                                    }
-                                }
+                                var tempReference = this.getReference(exprs[e].children[0].name);
 
                                 if (tempReference != -1) {
                                     // Update Used Attribute for Type + Push Type to Types
@@ -507,8 +467,6 @@ module CSCompiler {
                 default:
                     break;
             }
-
-            return valid;
         }
 
         /**
@@ -531,6 +489,32 @@ module CSCompiler {
                     return -1; 
                 }
             }
+        }
+
+        /**
+         * getReference(id)
+         * - GetReference is used to find the desired
+         *   identifier across all of our Symbol Tables.
+         */
+        public getReference(id) {
+            // Get Reference to Current Table + Get Reference
+            var t = this.symbolTable.current;
+            console.log("Checking Scope " + t.scope + " for " + id);
+            var reference = t.table.get(id);
+            
+            // Check if found in current Table
+            if (reference == -1) {
+                // Check Parent Table
+                while (t.parent != undefined && reference == -1) {
+                    t = t.parent;
+                    console.log("Checking Scope " + t.scope);
+
+                    reference = t.table.get(id);
+                    console.log("Reference = " + t.table.get(id));
+                }
+            }
+
+            return reference;
         }
 
         public emitEntry(type, name, info) {
