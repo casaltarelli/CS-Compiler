@@ -25,9 +25,7 @@ var CSCompiler;
             var value = -1;
             // Get Index of Key from Key List
             for (var i = 0; i < this.keys.length; i++) {
-                console.log("GET: Checking " + this.keys[i]);
                 if (key === this.keys[i]) {
-                    console.log("GET: Found " + this.keys[i] + " is equal to " + key);
                     value = this.values[i];
                 }
             }
@@ -43,7 +41,6 @@ var CSCompiler;
          */
         SymbolTable.prototype.set = function (key) {
             var status = false;
-            console.log("SET: Checking if key exists " + key);
             // Check if Key already exists
             if (this.get(key) === -1) {
                 this.keys.push(key);

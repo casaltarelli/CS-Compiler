@@ -499,7 +499,6 @@ module CSCompiler {
         public getReference(id) {
             // Get Reference to Current Table + Get Reference
             var t = this.symbolTable.current;
-            console.log("Checking Scope " + t.scope + " for " + id);
             var reference = t.table.get(id);
             
             // Check if found in current Table
@@ -507,10 +506,7 @@ module CSCompiler {
                 // Check Parent Table
                 while (t.parent != undefined && reference == -1) {
                     t = t.parent;
-                    console.log("Checking Scope " + t.scope);
-
                     reference = t.table.get(id);
-                    console.log("Reference = " + t.table.get(id));
                 }
             }
 
