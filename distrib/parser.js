@@ -112,9 +112,7 @@ var CSCompiler;
                         }
                     }
                     // Return back to Parent Node of Current Child
-                    if (!epsilon || (production.name != "Statement" && production.name != "StatementList")) {
-                        this.cst.ascendTree();
-                    }
+                    this.cst.ascendTree();
                 }
                 else {
                     // Error Found in Parse -- Exit

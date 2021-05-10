@@ -15,7 +15,8 @@ module CSCompiler {
             public errors = [],
             public ast = null,
             public symbolTable = null,
-            public analyzing = true) {}
+            public analyzing = true,
+            public count = 0) {}
 
         public init(cst: Tree ): void {
             // Announce Parser
@@ -29,6 +30,7 @@ module CSCompiler {
             this.ast = new Tree();
             this.symbolTable = new Tree();
             this.analyzing = true;
+            this.count = 0;
 
             // Productions Lists
             this.operators = _Productions.filter((op) => { return op.name.indexOf("Op") !== -1 || op.name.indexOf("OP") !== -1});
@@ -66,14 +68,19 @@ module CSCompiler {
                     }
 
                     if (!(operationFlag)) {
-                        // Add Node to AST Definition
-                        this.ast.addNode("Non-Terminal", node.name, {line: node.data.line, col: node.data.col});
+                        if (node.name == "Block") {
+                            // Add Node to AST Definition
+                            this.ast.addNode("Non-Terminal", node.name + this.count.toString(), {line: node.data.line, col: node.data.col});
+                            this.count++;
+                        } else {
+                            // Add Node to AST Definition
+                            this.ast.addNode("Non-Terminal", node.name, {line: node.data.line, col: node.data.col});
+                        }
 
                         // Check for Node "Block" -- Update Symbol Table Scope
                         if (node.name == "Block") {
                             this.scope++;
                             this.symbolTable.addTableNode(this.scope);
-                            console.log({});
                         }
                     }
 
@@ -122,6 +129,8 @@ module CSCompiler {
 
                 // If Essential Production found ascendTree on our AST
                 if (essentialFlag) {
+                    console.log("Current Node: " + this.ast.current.name);
+
                     // Ascend to Parent Table
                     if (node.name == "Block") {
                         this.symbolTable.ascendTable();
@@ -129,9 +138,11 @@ module CSCompiler {
                         // Analyze our AST for Symbol Table Updates
                         this.analyze(this.ast.current);
                     }
-
+                    
                     this.ast.ascendTree();
+                    console.log("Ascended too Node: " + this.ast.current.name);
                 }
+
             }
         }
 
@@ -367,16 +378,15 @@ module CSCompiler {
                         if (reference != -1) {
                             // Verify Decleration of ID
                             if (reference.declared.status == true) {
-                                // Check Initalized Attribute of ID
                                 if (reference.initalized.length) {
                                     // Update Used Attribute + EmitEntry
                                     reference.used.push({line: node.children[0].data.line, col: node.children[0].data.col});
                                     this.emitEntry("USED", node.children[0].name, {action: "Print", line: node.children[0].data.line, col: node.children[0].data.col});
-
                                 } else {
-                                    // EmitWarning Use of Unintalized Value
+                                    // EmitError for Unintalized Use of ID
                                     this.emitWarning("UNINITALIZED", node.children[0].name, {line: node.children[0].data.line, col: node.children[0].data.col});
                                 }
+                                
                             } else {
                                 // EmitError for Use of Undeclared ID
                                 this.emitError("UNDECLARED", node.children[0].name, {line: node.children[0].data.line, col: node.children[0].data.col});
@@ -619,19 +629,14 @@ module CSCompiler {
             // Get Table Reference for Node
             var table = node.table;
 
-            console.log("Entering Seek");
-
             for (var i = 0; i < table.keys.length; i++) {
                 // Get Direct Reference to Table Entry Values
                 var entry = table.values[i];
 
-                console.log("ID Used Length: " + entry.used.length);
-                console.log(JSON.stringify(entry.used));
-                
                 if (entry.declared.status == true && entry.initalized.length >= 1 && entry.used.length < 1) {
                     // EmitWarning for Initalized but Unused Identifier + Update Warnings List
                     this.emitWarning("UNUSED-INIT", table.keys[i], {line: entry.declared.line, col: entry.declared.col});
-                } else if (entry.declared.status = true && entry.used.length < 1 && entry.initalized.length < 1) {
+                } else if (entry.declared.status = true && entry.used.length >= 1 && entry.initalized.length < 1) {
                     // EmitWarning for Unused Identifier + Update Warnings List
                     this.emitWarning("UNUSED-DEC", table.keys[i], {line: entry.declared.line, col: entry.declared.col});
                 } 
