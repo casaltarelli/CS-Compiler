@@ -129,18 +129,14 @@ module CSCompiler {
 
                 // If Essential Production found ascendTree on our AST
                 if (essentialFlag) {
-                    console.log("Current Node: " + this.ast.current.name);
-
                     // Ascend to Parent Table
                     if (node.name == "Block") {
                         this.symbolTable.ascendTable();
-                    } else {
-                        // Analyze our AST for Symbol Table Updates
-                        this.analyze(this.ast.current);
                     }
-                    
+
+                    // Analyze our AST for Symbol Table Updates + Ascend to Parent
+                    this.analyze(this.ast.current);
                     this.ast.ascendTree();
-                    console.log("Ascended too Node: " + this.ast.current.name);
                 }
 
             }
@@ -215,11 +211,7 @@ module CSCompiler {
                         } else {
                             set = this.seekTerminal(node.children[child], []);
                         }
-                        
-                        //console.log("SEEKTREE: Set Returned from SeekTerminal:");
-                        for (var s in set) {
-                            console.log("   -  " + set[s].name);
-                        }
+
                         var stringIndex = null;
                         out:
                         for (var terminal in set) {
@@ -286,7 +278,7 @@ module CSCompiler {
                     var expr = node.children[1];
 
                     // Get ID Reference in SymbolTable
-                    var reference = this.getReference(id.name);
+                    var reference = this.getReference(id);
 
                     if (reference != -1) {
                         // Verify Decleration of ID
@@ -298,7 +290,7 @@ module CSCompiler {
 
                                 if (exprType == "id") {
                                     // Get ID Reference
-                                    var tempReference = this.getReference(expr.name);
+                                    var tempReference = this.getReference(expr);
 
                                     if (tempReference != -1) {
                                         // Check Decleration Attribute
@@ -373,7 +365,7 @@ module CSCompiler {
                     // Check if Child Node is ID
                     if (this.getType(node.children[0]) == "id") {
                         // Get Reference
-                        var reference = this.getReference(node.children[0].name);
+                        var reference = this.getReference(node.children[0]);
 
                         if (reference != -1) {
                             // Verify Decleration of ID
@@ -414,7 +406,7 @@ module CSCompiler {
 
                             if (tempType == "id") {
                                 // Get ID Reference
-                                var reference = this.getReference(exprs[e].name);
+                                var reference = this.getReference(exprs[e]);
 
                                 // Validate Reference
                                 if (reference != -1) {
@@ -509,14 +501,14 @@ module CSCompiler {
         public getReference(id) {
             // Get Reference to Current Table + Get Reference
             var t = this.symbolTable.current;
-            var reference = t.table.get(id);
+            var reference = t.table.get(id.name);
             
             // Check if found in current Table
             if (reference == -1) {
                 // Check Parent Table
-                while (t.parent != undefined && reference == -1) {
+                while (t.parent.table != undefined && reference == -1) {
                     t = t.parent;
-                    reference = t.table.get(id);
+                    reference = t.table.get(id.name);
                 }
             }
 
@@ -629,14 +621,16 @@ module CSCompiler {
             // Get Table Reference for Node
             var table = node.table;
 
+            console.log("Scanning Symbol Table for Scope: " + node.scope);
+
             for (var i = 0; i < table.keys.length; i++) {
                 // Get Direct Reference to Table Entry Values
                 var entry = table.values[i];
 
-                if (entry.declared.status == true && entry.initalized.length >= 1 && entry.used.length < 1) {
+                if (entry.declared.status == true && entry.initalized.length != 0 && entry.used.length == 0) {
                     // EmitWarning for Initalized but Unused Identifier + Update Warnings List
                     this.emitWarning("UNUSED-INIT", table.keys[i], {line: entry.declared.line, col: entry.declared.col});
-                } else if (entry.declared.status = true && entry.used.length >= 1 && entry.initalized.length < 1) {
+                } else if (entry.declared.status = true && entry.initalized.length == 0 && entry.used.length == 0) {
                     // EmitWarning for Unused Identifier + Update Warnings List
                     this.emitWarning("UNUSED-DEC", table.keys[i], {line: entry.declared.line, col: entry.declared.col});
                 } 
