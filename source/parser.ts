@@ -36,7 +36,6 @@ module CSCompiler {
             // Get Production Reference + Index of Production Rule
             var production = _Productions.filter((production) => {return production.name == p})[0];
             var index = this.getRule(production.first);
-            var epsilon = false;    // Epsilon Flag for ascendTree
 
             // Check if we have consumed all Tokens from Stream
             if (this.parsing && this.tokenStream.length == 0) {
@@ -87,7 +86,6 @@ module CSCompiler {
                                 }
                             } else {
                                 // Epsilon Case + EmitMatch
-                                epsilon = true;
                                 this.emitMatch(production.inner[0][0], "\u03B5");
                             }
                         } else {                // General Case

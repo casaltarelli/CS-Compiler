@@ -71,7 +71,7 @@ var CSCompiler;
                     }
                     if (!(operationFlag)) {
                         if (node.name == "Block") {
-                            // Add Node to AST Definition
+                            // Asdd Node to AST Definition
                             this.ast.addNode("Non-Terminal", node.name + this.count.toString(), { line: node.data.line, col: node.data.col });
                             this.count++;
                         }
