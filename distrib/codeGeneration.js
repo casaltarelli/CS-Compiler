@@ -107,13 +107,106 @@ var CSCompiler;
             var data = this.getType(node);
             switch (reg) {
                 case "Acc":
-                    // TODO:- Implement handleAcc(action, type, value)
-                    break;
-                case "YReg":
-                    // TODO:- Implement handleYReg(action, type, value)
+                    this.handleAcc(action, data.type, data.value);
                     break;
                 case "XReg":
-                    // TODO:- Implement handleXReg(action, type, value)
+                    this.handleXReg(action, data.type, data.value);
+                    break;
+                case "YReg":
+                    this.handleYReg(action, data.type, data.value);
+                    break;
+                default:
+                    console.log("Unrecognized Register Allocation Request");
+            }
+        };
+        /**
+         * handleAcc(action, type, value)
+         * - HandleAcc allows for us to generate
+         *   any needed Op Codes regarding the Acc.
+         *   Action determines what sequence to follow,
+         *   with Type directing on how to handle the
+         *   value given.
+         */
+        CodeGeneration.prototype.handleAcc = function (action, type, value) {
+            switch (action) {
+                case "load":
+                    // Determine Load based on Type
+                    if (type == "Memory") {
+                        this.appendText("AD");
+                        this.appendText(value);
+                        this.appendText("XX");
+                    }
+                    else {
+                        this.appendText("A9");
+                        this.appendText(value);
+                    }
+                    break;
+                case "store":
+                    // Determine Store based on Type
+                    if (type == "Memory") {
+                        this.appendText("8D");
+                        this.appendText(value);
+                        this.appendText("XX");
+                    }
+                    break;
+                default:
+                    console.log("Unrecognized Action for Acc");
+                    break;
+            }
+        };
+        /**
+         * handleYReg(action, type, value)
+         * - HandleYReg allows for us to generate
+         *   any needed Op Codes regarding the Y Reg.
+         *   Action determines what sequence to follow,
+         *   with Type directing on how to handle the
+         *   value given.
+         */
+        CodeGeneration.prototype.handleYReg = function (action, type, value) {
+            switch (action) {
+                case "load":
+                    if (type == "Memory") {
+                        this.appendText("AC");
+                        this.appendText(value);
+                        this.appendText("XX");
+                    }
+                    else {
+                        this.appendText("A0");
+                        this.appendText(value);
+                    }
+                    break;
+                case "load-print":
+                    if (type == "Memory") {
+                        this.appendText("AC");
+                        this.appendText(value);
+                        this.appendText("XX");
+                        // Load X Reg w/ 02
+                        this.handleXReg("load", "Constant", "02");
+                    }
+                    else {
+                        this.appendText("A0");
+                        this.appendText(value);
+                        // Load X Reg w/ 01
+                        this.handleXReg("load", "Constant", "01");
+                    }
+                    break;
+                default:
+                    console.log("Unrecognized Action for Y Register");
+                    break;
+            }
+        };
+        CodeGeneration.prototype.handleXReg = function (action, type, value) {
+            switch (action) {
+                case "load":
+                    if (type == "Memory") {
+                        this.appendText("AE");
+                        this.appendText(value);
+                        this.appendText("XX");
+                    }
+                    else {
+                        this.appendText("A2");
+                        this.appendText(value);
+                    }
                     break;
             }
         };
@@ -147,15 +240,17 @@ var CSCompiler;
                 }
                 else if (node.name.indexOf("\"") > -1) {
                     type = "Memory";
+                    // Get Dynamic Pointer from Heap
                     value = this.appendHeap(node.name);
                 }
                 else {
                     type = "Memory";
+                    // Get Static Pointer from Static Data
                     value = this.appendStack(node.name, this.scope);
                 }
             }
             else {
-                type = "Memory";
+                type = "Constant";
                 value = "00"; // Default Value
             }
             return { type: type, value: value };
