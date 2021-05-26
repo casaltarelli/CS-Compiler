@@ -4,13 +4,13 @@
     Code Generation is used to develop our Executable Image using 6502a Assembly Op Codes. Based on our Intermediate
     Representation (AST) that was developed in Semantic Analysis and our Symbol Table(s). We will be able to execute
     a pre-order traversal of our AST to generate our Machine Code based on our Basic Blocks. One Code Generation is
-    completed, we will then execute Stack Allocation and Backpatching to replace all temporary Addresses and Jumps
+    completed, we will then execute Stack Allocation and Backpatching to replace all temporary Addresses and Jumps.
 
 ----- */
 var CSCompiler;
 (function (CSCompiler) {
     var CodeGeneration = /** @class */ (function () {
-        function CodeGeneration(ast, symbolTable, errors, generating, staticData, jumpData, heapData, textIndex, heapIndex, boolPointers, image) {
+        function CodeGeneration(ast, symbolTable, errors, generating, staticData, jumpData, heapData, scope, textIndex, heapIndex, boolPointers, image) {
             if (ast === void 0) { ast = null; }
             if (symbolTable === void 0) { symbolTable = null; }
             if (errors === void 0) { errors = 0; }
@@ -18,6 +18,7 @@ var CSCompiler;
             if (staticData === void 0) { staticData = null; }
             if (jumpData === void 0) { jumpData = null; }
             if (heapData === void 0) { heapData = null; }
+            if (scope === void 0) { scope = -1; }
             if (textIndex === void 0) { textIndex = 0; }
             if (heapIndex === void 0) { heapIndex = 256; }
             if (boolPointers === void 0) { boolPointers = { "true": "", "false": "" }; }
@@ -29,6 +30,7 @@ var CSCompiler;
             this.staticData = staticData;
             this.jumpData = jumpData;
             this.heapData = heapData;
+            this.scope = scope;
             this.textIndex = textIndex;
             this.heapIndex = heapIndex;
             this.boolPointers = boolPointers;
@@ -47,6 +49,7 @@ var CSCompiler;
             this.heapData = [];
             this.textIndex = 0;
             this.heapIndex = 256;
+            this.scope = -1;
             this.boolPointers = { "true": "", "false": "" };
             this.image = [];
             // Inititalize Executable Image
@@ -64,9 +67,113 @@ var CSCompiler;
          */
         CodeGeneration.prototype.generate = function (node) {
             if (this.generating) { // [General Case]
+                // Update Visited Flag on Node
+                node.visited = true;
+                // Check if Current Node is Block
+                if (node.name == "Block") {
+                    // Increment Scope for New Block
+                    this.scope++;
+                }
+                else {
+                    // EmitAction on current Production + Get Basic Block Reference
+                    this.emitAction("Production", node.name, node.data);
+                    // Get Block Reference for Production
+                    var block = _Blocks.filter(function (b) { return b.name == node.name; })[0];
+                    if (block) {
+                        // Allocate First of Block
+                        this.allocate(block.register, block.first.action, node.children[block.first.child]);
+                        // Proceed to Children for current Node
+                        for (var child in node.children) {
+                            if (!(node.children[child].visited)) {
+                                this.generate(node.children[child]);
+                            }
+                        }
+                    }
+                    // Check for JumpFlag + UnconditionalFlag
+                    // TODO:- Implement JumpFlag Handeling
+                }
             }
             else { // [Base Case]
             }
+        };
+        /**
+         * allocate(reg, action, node)
+         * - Allocate is used to generate the
+         *   correct text for a specific Action
+         *   on a given Register
+         */
+        CodeGeneration.prototype.allocate = function (reg, action, node) {
+            // Determine Node Type
+            var data = this.getType(node);
+            switch (reg) {
+                case "Acc":
+                    // TODO:- Implement handleAcc(action, type, value)
+                    break;
+                case "YReg":
+                    // TODO:- Implement handleYReg(action, type, value)
+                    break;
+                case "XReg":
+                    // TODO:- Implement handleXReg(action, type, value)
+                    break;
+            }
+        };
+        /**
+         * getType(node) : { type, value }
+         * - GetType is used to recognize the
+         *   type of Value we are dealing with
+         *   (Constant or Memory Pointer)
+         */
+        CodeGeneration.prototype.getType = function (node) {
+            var type = "";
+            var value = "";
+            // Validate Not Null [Default Value Case]
+            if (node != null) {
+                if (node.children.length != 0) {
+                    // Looking at Operator
+                    // TODO:- Develop generateOperator
+                    // return 
+                }
+                else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
+                    type = "Constant";
+                    if (node.name == "true") {
+                        value = this.boolPointers["true"];
+                    }
+                    else if (node.name == "false") {
+                        value = this.boolPointers["false"];
+                    }
+                    else {
+                        value = "0" + node.name;
+                    }
+                }
+                else if (node.name.indexOf("\"") > -1) {
+                    type = "Memory";
+                    value = this.appendHeap(node.name);
+                }
+                else {
+                    type = "Memory";
+                    value = this.appendStack(node.name, this.scope);
+                }
+            }
+            else {
+                type = "Memory";
+                value = "00"; // Default Value
+            }
+            return { type: type, value: value };
+        };
+        /**
+         * appendText(text)
+         * - AppendText handles entering
+         *   text (code) into our Executable
+         *   Image.
+         */
+        CodeGeneration.prototype.appendText = function (text) {
+            // Add Byte to Executable Image
+            this.image[this.textIndex] == text;
+            // EmitAction on Byte
+            this.emitAction("Byte", text, { index: this.textIndex });
+            // Increment Text Index
+            this.textIndex++;
+            // TODO:- Implement Collision Check
         };
         /**
          * appendStack(id, scope)
@@ -81,7 +188,7 @@ var CSCompiler;
             if (pointer == "") {
                 // Generate Temporary Address + Static Data Object
                 var temp = "T" + this.staticData.length;
-                var entry = { pointer: temp, value: id, scope: scope };
+                var entry = { pointer: temp, value: id, scope: scope, location: "" };
                 // Push to staticData
                 this.staticData.push(entry);
                 return entry.pointer.substr(0, 2);
@@ -162,8 +269,8 @@ var CSCompiler;
                 case "Production":
                     data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
                     break;
-                case "Entry":
-                    data = "Generating " + value;
+                case "Byte":
+                    data = "Generating [ " + value + " ] at index " + data.index;
                     break;
                 default:
                     break;
