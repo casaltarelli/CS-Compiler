@@ -14,12 +14,13 @@ module CSCompiler {
                     public symbolTable = null,
                     public errors = 0,
                     public generating = true,
+                    public comparisonFlag = false,
                     public staticData = null,
                     public jumpData = null,
                     public heapData = null,
                     public scope = -1,
                     public textIndex = 0,
-                    public heapIndex = 256,
+                    public heapIndex = 255,
                     public boolPointers = {true: "", false: ""},
                     public image = []) {}
 
@@ -32,6 +33,7 @@ module CSCompiler {
             this.symbolTable = symbolTable;
             this.errors = 0;
             this.generating = true;
+            this.comparisonFlag = false;
             this.staticData = [];
             this.jumpData = [];
             this.heapData = [];
@@ -58,6 +60,7 @@ module CSCompiler {
          */
         public generate(node) {
             if (this.generating) {  // [General Case]
+                console.log("GENERATE: Current Node: " + node.name);
                 // Update Visited Flag on Node
                 node.visited = true;
 
@@ -65,23 +68,39 @@ module CSCompiler {
                 if (node.name == "Block") {
                     // Increment Scope for New Block
                     this.scope++;
-                } else {
-                    // EmitAction on current Production + Get Basic Block Reference
-                    this.emitAction("Production", node.name, node.data);
 
+                    // Recursivley Call Children
+                    if (node.children.length) {
+                        for (var c in node.children) {
+                            this.generate(node.children[c]);
+                        }
+                    }
+                } else {
                     // Get Block Reference for Production
                     var block = _Blocks.filter((b) => {return b.name == node.name})[0];
 
                     if (block) {
+                        console.log(node.name + " found in Blocks");
+                        // EmitAction on current Node + Get Basic Block Reference
+                        this.emitAction("Production", node.name, node.data);
+
                         // Check if we need to Allocate First Segment
                         if (block.first.allocate) {
                             this.allocate(block.register, block.first.action, node.children[block.first.child]);
+
+                            // Check if Operator Found in First Segement
+                            if (this.comparisonFlag) {
+                                // Execute Comparison Generation for First Child of Production
+                                console.log("GENERATE: Recognized ComparisonFlag!");
+                                this.generateComparison(node.name, node.children[block.first.child].name, "00");
+                                this.comparisonFlag = false;
+                            }
                         }
 
                         // Proceed to Children for current Node
                         for (var child in node.children) {
                             if (!(node.children[child].visited)) {
-                                // TODO:- Develop Check for Operator Child
+                                console.log("Calling Generate on " + node.children[child].name);
                                 this.generate(node.children[child]);
                             }
                         }
@@ -92,7 +111,19 @@ module CSCompiler {
                         } else {
                             block.final.generate();
                         }
-                    }
+
+                    } 
+                    
+                    // else {
+                    //     // Check if Node is Operator
+                    //     if (node.name == "+" || node.name == "==" || node.name == "!=") {
+                    //         // Generate Operator Text
+                    //         var temp = this.generateOperator(node);
+
+                    //         // Execute Comparison Generation
+                    //         this.generateComparison(node.parent.name, node, temp);
+                    //     }
+                    // }
 
                     
 
@@ -113,25 +144,218 @@ module CSCompiler {
          *   on a given Register
          */
         public allocate(reg, action, node) {
-            // Update Visited Flag on Child Node
-            node.visited = true;
-
             // Determine Node Type
             var data = this.getType(node);
 
+            console.log("ALLOCATE: Action " + action + " for register " + reg);
+            if (node != null) {
+                console.log("ALLOCATE: Returned from GetType w/ type " + data.type + " for " + node.name);
+            }
+
+            if (this.comparisonFlag) {
+                //this.generateComparison(node.parent.name, node.name, data.value);
+                return; 
+            }
+            
             switch(reg) {
                 case "Acc":
+                    console.log("ALLOCATE: Hit on Acc Reg!");
                     this.handleAcc(action, data.type, data.value);
                     break;
                 case "XReg":
+                    console.log("ALLOCATE: Hit on X Reg!");
                     this.handleXReg(action, data.type, data.value);
                     break;
                 case "YReg":
+                    console.log("ALLOCATE: Hit on Y Reg!");
                     this.handleYReg(action, data.type, data.value);
                     break;
 
                 default: 
                     console.log("Unrecognized Register Allocation Request");
+            }
+        }
+
+        /**
+         * getType(node) : { type, value }
+         * - GetType is used to recognize the
+         *   type of Value we are dealing with
+         *   (Constant or Memory Pointer)
+         */
+        public getType(node) {
+        var type = "";
+        var value = "";
+
+        // Validate Not Null [Default Value Case]
+        if (node != null) {
+            // Update Visited Flag on Child Node
+            node.visited = true;
+
+            if (node.children.length != 0) {
+                // Check for Nested Operator
+                if (node.parent.name != "==" || node.parent.name != "!=") {
+                    type = "Memory";
+                    value = this.generateOperator(node);
+                    this.comparisonFlag = true;
+                } else {
+                    this.emitError("Unsupported");
+                }
+            } else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
+                type = "Constant";
+                if (node.name == "true") {
+                    value = this.boolPointers.true;
+                } else if (node.name == "false") {
+                    value = this.boolPointers.false;
+                } else {
+                    value = "0" + node.name;
+                }
+            } else if (node.name.indexOf("\"") > -1) {
+                type = "Constant";
+
+                // Get Dynamic Pointer from Heap
+                value = this.appendHeap(node.name);
+            } else {
+                type = "Memory";
+
+                // Get Static Pointer from Static Data
+                value = this.appendStack(node.name, this.scope);
+            }
+
+            } else {
+                type = "Constant";
+                value = "00" // Default Value
+            }
+
+            return {type: type, value: value};
+        }
+
+        public generateOperator(node) {
+            // EmitAction on Current Operator
+            this.emitAction("Production", node.name, node.data);
+
+            switch(node.name) {
+                case "+":
+                    // Get Type of RHS
+                    var data = this.getType(node.children[1]);
+
+                    // Load Acc + Store in Memory at Default Location
+                    this.handleAcc("Load", data.type, data.value);
+                    this.handleAcc("Store", "Memory", "00");
+
+                    // Load Acc w/ LHS
+                    this.handleAcc("Load", "Constant", "0" + node.children[0].name);
+
+                    // Manually Append Add w/ Carry
+                    this.appendText("6D");
+                    this.appendText("00");
+                    this.appendText("00");
+
+                    // Store Sum at Default Location
+                    this.handleAcc("Store", "Memory", "00");
+
+                    break;
+                case "==":
+                case "!=":
+                    // Get Type of LHS Value
+                    var data = this.getType(node.children[0]);
+
+                    // Load X Reg w/ LHS Value
+                    this.handleXReg("Load", data.type, data.value);
+
+                    // Get Type of RHS Value
+                    data = this.getType(node.children[1]);
+
+                    // Load Acc w/ RHS Value + Store at Default Location
+                    this.handleAcc("Load", data.type, data.value);
+                    this.handleAcc("Store", "Memory", "00");
+            }
+
+            // Return Default Location
+            return "00";
+        }
+
+        public generateComparison(parent, node, address) {
+            console.log("GENCOMPARISON: Entered!");
+            switch(parent) {
+                case "AssignmentStatement":
+                    console.log("GENCOMPARISON: Recognized Parent AssignStatement");
+                    if (node == "==") {
+                        console.log("GENCOMPARISON: Recognized Child ==");
+                        this.handleXReg("Compare", "Memory", address);
+
+                        this.handleAcc("Load", "Constant", this.boolPointers.false);
+
+                        // BNE 2 Bytes
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        this.handleAcc("Load", "Constant", this.boolPointers.true);
+                    } else if (node == "!=") {
+                        console.log("GENCOMPARISON: Recognized Child !=");
+                        this.handleXReg("Compare", "Memory", address);
+                        this.handleAcc("Load", "Constant", "00");
+
+                        // BNE 2 Bytes
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        this.handleAcc("Load", "Constant", "01");
+                        this.handleXReg("Load", "Constant", "00");
+
+                        this.handleAcc("Store", "Memory", "00");
+
+                        this.handleXReg("Compare", "Memory", "00");
+
+                        this.handleAcc("Load", "Constant", this.boolPointers.false);
+
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        this.handleAcc("Load", "Constant", this.boolPointers.true);
+                    } 
+                    break;
+
+                case "PrintStatement":
+                    if (node == "==") {
+                        this.handleXReg("Compare", "Memory", address);
+
+                        this.appendText("D0");
+                        this.appendText("0A");
+
+                        this.handleYReg("Load", "Constant", this.boolPointers.true);
+                        this.handleXReg("Load", "Memory", "FF");
+
+                        this.handleXReg("Compare", "Memory", "FE");
+
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        this.handleYReg("Load", "Constant", this.boolPointers.false);
+                        this.handleXReg("Load", "Constant", "02");
+                    } else if (node == "!=") {
+                        this.handleXReg("Compare", "Memory", address);
+
+                        this.appendText("D0");
+                        this.appendText("0A");
+
+                        this.handleYReg("Load", "Constant", this.boolPointers.false);
+                        this.handleXReg("Load", "Memory", "FF");
+
+                        this.handleXReg("Compare", "Memory", "FE");
+
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        this.handleYReg("Load", "Constant", this.boolPointers.true);
+                        this.handleXReg("Load", "Constant", "02");
+                    } else {
+                        this.handleYReg("Load", "Memory", address);
+                    }
+                    break;
+
+                default:
+                    console.log("Unrecognized Node for Generate Comparison");
+                    break;
             }
         }
 
@@ -145,7 +369,7 @@ module CSCompiler {
          */
         public handleAcc(action, type, value) {
             switch(action) {
-                case "load":
+                case "Load":
                     // Determine Load based on Type
                     if (type == "Memory") {
                         this.appendText("AD");
@@ -157,7 +381,7 @@ module CSCompiler {
                     }
                     break;
 
-                case "store":
+                case "Store":
                     // Determine Store based on Type
                     if (type == "Memory") {
                         this.appendText("8D");
@@ -182,7 +406,7 @@ module CSCompiler {
          */
         public handleYReg(action, type, value) {
             switch(action) {
-                case "load":
+                case "Load":
                     if (type == "Memory") {
                         this.appendText("AC");
                         this.appendText(value);
@@ -193,20 +417,21 @@ module CSCompiler {
                     }
                     break;
                 
-                case "load-print":
+                case "Load-print":
+                    console.log("HANDLEYREG: Recognized Load Print!");
                     if (type == "Memory") {
                         this.appendText("AC");
                         this.appendText(value);
                         this.appendText("00");
 
                         // Load X Reg w/ 02
-                        this.handleXReg("load", "Constant", "02");
+                        this.handleXReg("Load", "Constant", "02");
                     } else {
                         this.appendText("A0");
                         this.appendText(value);
 
                         // Load X Reg w/ 01
-                        this.handleXReg("load", "Constant", "01");
+                        this.handleXReg("Load", "Constant", "01");
                     }
                     break;
 
@@ -226,7 +451,7 @@ module CSCompiler {
          */
         public handleXReg(action, type, value) {
             switch(action) {
-                case "load":
+                case "Load":
                     if (type == "Memory") {
                         this.appendText("AE");
                         this.appendText(value);
@@ -236,101 +461,18 @@ module CSCompiler {
                         this.appendText(value);
                     }
                     break;
-            }
-        }
 
-        public generateOperator(node) {
-            // EmitAction on Current Operator
-            this.emitAction("Production", node.name, node.data);
-
-            switch(node.name) {
-                case "+":
-                    // Get Type of RHS
-                    var data = this.getType(node.children[1]);
-
-                    // Load Acc + Store in Memory at Default Location
-                    this.handleAcc("load", data.type, data.value);
-                    this.handleAcc("store", "Memory", "00");
-
-                    // Load Acc w/ LHS
-                    this.handleAcc("load", "Constant", node.children[0].name);
-
-                    // Manually Append Add w/ Carry
-                    this.appendText("6D");
-                    this.appendText("00");
-                    this.appendText("00");
-
-                    // Store Sum at Default Location
-                    this.handleAcc("store", "Memory", "00");
-
+                case "Compare":
+                    if (type == "Memory") {
+                        this.appendText("EC");
+                        this.appendText(value);
+                        this.appendText("00");
+                    }
                     break;
-                case "==":
-                case "!=":
-                    // Get Type of LHS
-                    var data = this.getType(node.children[0]);
 
-                    // Load X Reg w/ LHS
-                    this.handleXReg("load", data.type, data.value);
-
-                    // Get Type of RHS
-                    data = this.getType(node.children[1]);
-
-                    // Load Acc w/ RHS + Store at Default Location
-                    this.handleAcc("load", data.type, data.value);
-                    this.handleAcc("store", "Memory", "00");
+                default:
+                    console.log("Unrecognized Action for X Register");
             }
-
-            // Return Default Location
-            return "00";
-        }
-
-        /**
-         * getType(node) : { type, value }
-         * - GetType is used to recognize the
-         *   type of Value we are dealing with
-         *   (Constant or Memory Pointer)
-         */
-        public getType(node) {
-            var type = "";
-            var value = "";
-
-            // Validate Not Null [Default Value Case]
-            if (node != null) {
-                if (node.children.length != 0) {
-                    // Check for Nested Operator
-                    if (node.parent.name != "==" || node.parent.name != "!=") {
-                        type = "Memory";
-                        value = this.generateOperator(node);
-                    } else {
-                        // TODO:- Develop EmitError 
-                    }
-                } else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
-                    type = "Constant";
-                    if (node.name == "true") {
-                        value = this.boolPointers.true;
-                    } else if (node.name == "false") {
-                        value = this.boolPointers.false;
-                    } else {
-                        value = "0" + node.name;
-                    }
-                } else if (node.name.indexOf("\"") > -1) {
-                    type = "Constant";
-
-                    // Get Dynamic Pointer from Heap
-                    value = this.appendHeap(node.name);
-                } else {
-                    type = "Memory";
-
-                    // Get Static Pointer from Static Data
-                    value = this.appendStack(node.name, this.scope);
-                }
-
-            } else {
-                type = "Constant";
-                value = "00" // Default Value
-            }
-
-            return {type: type, value: value};
         }
 
         /**
@@ -340,8 +482,10 @@ module CSCompiler {
          *   Image. 
          */
         public appendText(text) {
+            console.log("APPENDTEXT: text sent " + text + " at index " + this.textIndex);
+
             // Add Byte to Executable Image
-            this.image[this.textIndex] == text; 
+            this.image[this.textIndex] = text;
 
             // EmitAction on Byte
             this.emitAction("Byte", text, {index: this.textIndex});

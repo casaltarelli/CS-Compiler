@@ -80,6 +80,7 @@ var CSCompiler;
                         this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                     }
                     else if (_Stage == "Code Generation") {
+                        this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                     }
                     break;
                 case "WARN":
@@ -90,7 +91,7 @@ var CSCompiler;
                     break;
                 default:
                     if (flag) {
-                        this.code.value += msg.data;
+                        this.code.value += msg.data + "\n\n";
                     }
                     else {
                         this.log.value += msg.data + "\n";
@@ -107,6 +108,7 @@ var CSCompiler;
          */
         Logger.prototype.reset = function () {
             this.log.value = "";
+            this.code.value = "";
         };
         return Logger;
     }());

@@ -82,7 +82,7 @@
                         } else if (_Stage == "Semantic Analysis") {
                             this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                         } else if (_Stage == "Code Generation") {
-
+                            this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                         }
                         
                         break;
@@ -97,7 +97,7 @@
 
                     default: 
                         if (flag) {
-                            this.code.value += msg.data;
+                            this.code.value += msg.data + "\n\n";
                         } else {
                             this.log.value += msg.data + "\n";
                         }
@@ -115,6 +115,7 @@
              */
             public reset(): void {
                 this.log.value = "";
+                this.code.value = "";
             }
         }
     }

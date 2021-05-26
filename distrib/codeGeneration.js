@@ -10,23 +10,25 @@
 var CSCompiler;
 (function (CSCompiler) {
     var CodeGeneration = /** @class */ (function () {
-        function CodeGeneration(ast, symbolTable, errors, generating, staticData, jumpData, heapData, scope, textIndex, heapIndex, boolPointers, image) {
+        function CodeGeneration(ast, symbolTable, errors, generating, comparisonFlag, staticData, jumpData, heapData, scope, textIndex, heapIndex, boolPointers, image) {
             if (ast === void 0) { ast = null; }
             if (symbolTable === void 0) { symbolTable = null; }
             if (errors === void 0) { errors = 0; }
             if (generating === void 0) { generating = true; }
+            if (comparisonFlag === void 0) { comparisonFlag = false; }
             if (staticData === void 0) { staticData = null; }
             if (jumpData === void 0) { jumpData = null; }
             if (heapData === void 0) { heapData = null; }
             if (scope === void 0) { scope = -1; }
             if (textIndex === void 0) { textIndex = 0; }
-            if (heapIndex === void 0) { heapIndex = 256; }
+            if (heapIndex === void 0) { heapIndex = 255; }
             if (boolPointers === void 0) { boolPointers = { "true": "", "false": "" }; }
             if (image === void 0) { image = []; }
             this.ast = ast;
             this.symbolTable = symbolTable;
             this.errors = errors;
             this.generating = generating;
+            this.comparisonFlag = comparisonFlag;
             this.staticData = staticData;
             this.jumpData = jumpData;
             this.heapData = heapData;
@@ -44,6 +46,7 @@ var CSCompiler;
             this.symbolTable = symbolTable;
             this.errors = 0;
             this.generating = true;
+            this.comparisonFlag = false;
             this.staticData = [];
             this.jumpData = [];
             this.heapData = [];
@@ -67,27 +70,42 @@ var CSCompiler;
          */
         CodeGeneration.prototype.generate = function (node) {
             if (this.generating) { // [General Case]
+                console.log("GENERATE: Current Node: " + node.name);
                 // Update Visited Flag on Node
                 node.visited = true;
                 // Check if Current Node is Block
                 if (node.name == "Block") {
                     // Increment Scope for New Block
                     this.scope++;
+                    // Recursivley Call Children
+                    if (node.children.length) {
+                        for (var c in node.children) {
+                            this.generate(node.children[c]);
+                        }
+                    }
                 }
                 else {
-                    // EmitAction on current Production + Get Basic Block Reference
-                    this.emitAction("Production", node.name, node.data);
                     // Get Block Reference for Production
                     var block = _Blocks.filter(function (b) { return b.name == node.name; })[0];
                     if (block) {
+                        console.log(node.name + " found in Blocks");
+                        // EmitAction on current Node + Get Basic Block Reference
+                        this.emitAction("Production", node.name, node.data);
                         // Check if we need to Allocate First Segment
                         if (block.first.allocate) {
                             this.allocate(block.register, block.first.action, node.children[block.first.child]);
+                            // Check if Operator Found in First Segement
+                            if (this.comparisonFlag) {
+                                // Execute Comparison Generation for First Child of Production
+                                console.log("GENERATE: Recognized ComparisonFlag!");
+                                this.generateComparison(node.name, node.children[block.first.child].name, "00");
+                                this.comparisonFlag = false;
+                            }
                         }
                         // Proceed to Children for current Node
                         for (var child in node.children) {
                             if (!(node.children[child].visited)) {
-                                // TODO:- Develop Check for Operator Child
+                                console.log("Calling Generate on " + node.children[child].name);
                                 this.generate(node.children[child]);
                             }
                         }
@@ -99,6 +117,15 @@ var CSCompiler;
                             block.final.generate();
                         }
                     }
+                    // else {
+                    //     // Check if Node is Operator
+                    //     if (node.name == "+" || node.name == "==" || node.name == "!=") {
+                    //         // Generate Operator Text
+                    //         var temp = this.generateOperator(node);
+                    //         // Execute Comparison Generation
+                    //         this.generateComparison(node.parent.name, node, temp);
+                    //     }
+                    // }
                     // Check for JumpFlag + UnconditionalFlag
                     // TODO:- Implement JumpFlag Handeling
                 }
@@ -113,156 +140,32 @@ var CSCompiler;
          *   on a given Register
          */
         CodeGeneration.prototype.allocate = function (reg, action, node) {
-            // Update Visited Flag on Child Node
-            node.visited = true;
             // Determine Node Type
             var data = this.getType(node);
+            console.log("ALLOCATE: Action " + action + " for register " + reg);
+            if (node != null) {
+                console.log("ALLOCATE: Returned from GetType w/ type " + data.type + " for " + node.name);
+            }
+            if (this.comparisonFlag) {
+                //this.generateComparison(node.parent.name, node.name, data.value);
+                return;
+            }
             switch (reg) {
                 case "Acc":
+                    console.log("ALLOCATE: Hit on Acc Reg!");
                     this.handleAcc(action, data.type, data.value);
                     break;
                 case "XReg":
+                    console.log("ALLOCATE: Hit on X Reg!");
                     this.handleXReg(action, data.type, data.value);
                     break;
                 case "YReg":
+                    console.log("ALLOCATE: Hit on Y Reg!");
                     this.handleYReg(action, data.type, data.value);
                     break;
                 default:
                     console.log("Unrecognized Register Allocation Request");
             }
-        };
-        /**
-         * handleAcc(action, type, value)
-         * - HandleAcc allows for us to generate
-         *   any needed Op Codes regarding the Acc.
-         *   Action determines what sequence to follow,
-         *   with Type directing on how to handle the
-         *   value given.
-         */
-        CodeGeneration.prototype.handleAcc = function (action, type, value) {
-            switch (action) {
-                case "load":
-                    // Determine Load based on Type
-                    if (type == "Memory") {
-                        this.appendText("AD");
-                        this.appendText(value);
-                        this.appendText("00");
-                    }
-                    else {
-                        this.appendText("A9");
-                        this.appendText(value);
-                    }
-                    break;
-                case "store":
-                    // Determine Store based on Type
-                    if (type == "Memory") {
-                        this.appendText("8D");
-                        this.appendText(value);
-                        this.appendText("00");
-                    }
-                    break;
-                default:
-                    console.log("Unrecognized Action for Acc");
-                    break;
-            }
-        };
-        /**
-         * handleYReg(action, type, value)
-         * - HandleYReg allows for us to generate
-         *   any needed Op Codes regarding the Y Reg.
-         *   Action determines what sequence to follow,
-         *   with Type directing on how to handle the
-         *   value given.
-         */
-        CodeGeneration.prototype.handleYReg = function (action, type, value) {
-            switch (action) {
-                case "load":
-                    if (type == "Memory") {
-                        this.appendText("AC");
-                        this.appendText(value);
-                        this.appendText("XX");
-                    }
-                    else {
-                        this.appendText("A0");
-                        this.appendText(value);
-                    }
-                    break;
-                case "load-print":
-                    if (type == "Memory") {
-                        this.appendText("AC");
-                        this.appendText(value);
-                        this.appendText("00");
-                        // Load X Reg w/ 02
-                        this.handleXReg("load", "Constant", "02");
-                    }
-                    else {
-                        this.appendText("A0");
-                        this.appendText(value);
-                        // Load X Reg w/ 01
-                        this.handleXReg("load", "Constant", "01");
-                    }
-                    break;
-                default:
-                    console.log("Unrecognized Action for Y Register");
-                    break;
-            }
-        };
-        /**
-         * handleXReg(action, type, value)
-         * - HandleXReg allows for us to generate
-         *   any needed Op Codes regarding the X Reg.
-         *   Action determines what sequence to follow,
-         *   with Type directing on how to handle the
-         *   value given.
-         */
-        CodeGeneration.prototype.handleXReg = function (action, type, value) {
-            switch (action) {
-                case "load":
-                    if (type == "Memory") {
-                        this.appendText("AE");
-                        this.appendText(value);
-                        this.appendText("00");
-                    }
-                    else {
-                        this.appendText("A2");
-                        this.appendText(value);
-                    }
-                    break;
-            }
-        };
-        CodeGeneration.prototype.generateOperator = function (node) {
-            // EmitAction on Current Operator
-            this.emitAction("Production", node.name, node.data);
-            switch (node.name) {
-                case "+":
-                    // Get Type of RHS
-                    var data = this.getType(node.children[1]);
-                    // Load Acc + Store in Memory at Default Location
-                    this.handleAcc("load", data.type, data.value);
-                    this.handleAcc("store", "Memory", "00");
-                    // Load Acc w/ LHS
-                    this.handleAcc("load", "Constant", node.children[0].name);
-                    // Manually Append Add w/ Carry
-                    this.appendText("6D");
-                    this.appendText("00");
-                    this.appendText("00");
-                    // Store Sum at Default Location
-                    this.handleAcc("store", "Memory", "00");
-                    break;
-                case "==":
-                case "!=":
-                    // Get Type of LHS
-                    var data = this.getType(node.children[0]);
-                    // Load X Reg w/ LHS
-                    this.handleXReg("load", data.type, data.value);
-                    // Get Type of RHS
-                    data = this.getType(node.children[1]);
-                    // Load Acc w/ RHS + Store at Default Location
-                    this.handleAcc("load", data.type, data.value);
-                    this.handleAcc("store", "Memory", "00");
-            }
-            // Return Default Location
-            return "00";
         };
         /**
          * getType(node) : { type, value }
@@ -275,14 +178,17 @@ var CSCompiler;
             var value = "";
             // Validate Not Null [Default Value Case]
             if (node != null) {
+                // Update Visited Flag on Child Node
+                node.visited = true;
                 if (node.children.length != 0) {
                     // Check for Nested Operator
                     if (node.parent.name != "==" || node.parent.name != "!=") {
                         type = "Memory";
                         value = this.generateOperator(node);
+                        this.comparisonFlag = true;
                     }
                     else {
-                        // TODO:- Develop EmitError 
+                        this.emitError("Unsupported");
                     }
                 }
                 else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
@@ -314,6 +220,214 @@ var CSCompiler;
             }
             return { type: type, value: value };
         };
+        CodeGeneration.prototype.generateOperator = function (node) {
+            // EmitAction on Current Operator
+            this.emitAction("Production", node.name, node.data);
+            switch (node.name) {
+                case "+":
+                    // Get Type of RHS
+                    var data = this.getType(node.children[1]);
+                    // Load Acc + Store in Memory at Default Location
+                    this.handleAcc("Load", data.type, data.value);
+                    this.handleAcc("Store", "Memory", "00");
+                    // Load Acc w/ LHS
+                    this.handleAcc("Load", "Constant", "0" + node.children[0].name);
+                    // Manually Append Add w/ Carry
+                    this.appendText("6D");
+                    this.appendText("00");
+                    this.appendText("00");
+                    // Store Sum at Default Location
+                    this.handleAcc("Store", "Memory", "00");
+                    break;
+                case "==":
+                case "!=":
+                    // Get Type of LHS Value
+                    var data = this.getType(node.children[0]);
+                    // Load X Reg w/ LHS Value
+                    this.handleXReg("Load", data.type, data.value);
+                    // Get Type of RHS Value
+                    data = this.getType(node.children[1]);
+                    // Load Acc w/ RHS Value + Store at Default Location
+                    this.handleAcc("Load", data.type, data.value);
+                    this.handleAcc("Store", "Memory", "00");
+            }
+            // Return Default Location
+            return "00";
+        };
+        CodeGeneration.prototype.generateComparison = function (parent, node, address) {
+            console.log("GENCOMPARISON: Entered!");
+            switch (parent) {
+                case "AssignmentStatement":
+                    console.log("GENCOMPARISON: Recognized Parent AssignStatement");
+                    if (node == "==") {
+                        console.log("GENCOMPARISON: Recognized Child ==");
+                        this.handleXReg("Compare", "Memory", address);
+                        this.handleAcc("Load", "Constant", this.boolPointers["false"]);
+                        // BNE 2 Bytes
+                        this.appendText("D0");
+                        this.appendText("02");
+                        this.handleAcc("Load", "Constant", this.boolPointers["true"]);
+                    }
+                    else if (node == "!=") {
+                        console.log("GENCOMPARISON: Recognized Child !=");
+                        this.handleXReg("Compare", "Memory", address);
+                        this.handleAcc("Load", "Constant", "00");
+                        // BNE 2 Bytes
+                        this.appendText("D0");
+                        this.appendText("02");
+                        this.handleAcc("Load", "Constant", "01");
+                        this.handleXReg("Load", "Constant", "00");
+                        this.handleAcc("Store", "Memory", "00");
+                        this.handleXReg("Compare", "Memory", "00");
+                        this.handleAcc("Load", "Constant", this.boolPointers["false"]);
+                        this.appendText("D0");
+                        this.appendText("02");
+                        this.handleAcc("Load", "Constant", this.boolPointers["true"]);
+                    }
+                    break;
+                case "PrintStatement":
+                    if (node == "==") {
+                        this.handleXReg("Compare", "Memory", address);
+                        this.appendText("D0");
+                        this.appendText("0A");
+                        this.handleYReg("Load", "Constant", this.boolPointers["true"]);
+                        this.handleXReg("Load", "Memory", "FF");
+                        this.handleXReg("Compare", "Memory", "FE");
+                        this.appendText("D0");
+                        this.appendText("02");
+                        this.handleYReg("Load", "Constant", this.boolPointers["false"]);
+                        this.handleXReg("Load", "Constant", "02");
+                    }
+                    else if (node == "!=") {
+                        this.handleXReg("Compare", "Memory", address);
+                        this.appendText("D0");
+                        this.appendText("0A");
+                        this.handleYReg("Load", "Constant", this.boolPointers["false"]);
+                        this.handleXReg("Load", "Memory", "FF");
+                        this.handleXReg("Compare", "Memory", "FE");
+                        this.appendText("D0");
+                        this.appendText("02");
+                        this.handleYReg("Load", "Constant", this.boolPointers["true"]);
+                        this.handleXReg("Load", "Constant", "02");
+                    }
+                    else {
+                        this.handleYReg("Load", "Memory", address);
+                    }
+                    break;
+                default:
+                    console.log("Unrecognized Node for Generate Comparison");
+                    break;
+            }
+        };
+        /**
+         * handleAcc(action, type, value)
+         * - HandleAcc allows for us to generate
+         *   any needed Op Codes regarding the Acc.
+         *   Action determines what sequence to follow,
+         *   with Type directing on how to handle the
+         *   value given.
+         */
+        CodeGeneration.prototype.handleAcc = function (action, type, value) {
+            switch (action) {
+                case "Load":
+                    // Determine Load based on Type
+                    if (type == "Memory") {
+                        this.appendText("AD");
+                        this.appendText(value);
+                        this.appendText("00");
+                    }
+                    else {
+                        this.appendText("A9");
+                        this.appendText(value);
+                    }
+                    break;
+                case "Store":
+                    // Determine Store based on Type
+                    if (type == "Memory") {
+                        this.appendText("8D");
+                        this.appendText(value);
+                        this.appendText("00");
+                    }
+                    break;
+                default:
+                    console.log("Unrecognized Action for Acc");
+                    break;
+            }
+        };
+        /**
+         * handleYReg(action, type, value)
+         * - HandleYReg allows for us to generate
+         *   any needed Op Codes regarding the Y Reg.
+         *   Action determines what sequence to follow,
+         *   with Type directing on how to handle the
+         *   value given.
+         */
+        CodeGeneration.prototype.handleYReg = function (action, type, value) {
+            switch (action) {
+                case "Load":
+                    if (type == "Memory") {
+                        this.appendText("AC");
+                        this.appendText(value);
+                        this.appendText("XX");
+                    }
+                    else {
+                        this.appendText("A0");
+                        this.appendText(value);
+                    }
+                    break;
+                case "Load-print":
+                    console.log("HANDLEYREG: Recognized Load Print!");
+                    if (type == "Memory") {
+                        this.appendText("AC");
+                        this.appendText(value);
+                        this.appendText("00");
+                        // Load X Reg w/ 02
+                        this.handleXReg("Load", "Constant", "02");
+                    }
+                    else {
+                        this.appendText("A0");
+                        this.appendText(value);
+                        // Load X Reg w/ 01
+                        this.handleXReg("Load", "Constant", "01");
+                    }
+                    break;
+                default:
+                    console.log("Unrecognized Action for Y Register");
+                    break;
+            }
+        };
+        /**
+         * handleXReg(action, type, value)
+         * - HandleXReg allows for us to generate
+         *   any needed Op Codes regarding the X Reg.
+         *   Action determines what sequence to follow,
+         *   with Type directing on how to handle the
+         *   value given.
+         */
+        CodeGeneration.prototype.handleXReg = function (action, type, value) {
+            switch (action) {
+                case "Load":
+                    if (type == "Memory") {
+                        this.appendText("AE");
+                        this.appendText(value);
+                        this.appendText("00");
+                    }
+                    else {
+                        this.appendText("A2");
+                        this.appendText(value);
+                    }
+                    break;
+                case "Compare":
+                    if (type == "Memory") {
+                        this.appendText("EC");
+                        this.appendText(value);
+                        this.appendText("00");
+                    }
+                    break;
+                default:
+                    console.log("Unrecognized Action for X Register");
+            }
+        };
         /**
          * appendText(text)
          * - AppendText handles entering
@@ -321,8 +435,9 @@ var CSCompiler;
          *   Image.
          */
         CodeGeneration.prototype.appendText = function (text) {
+            console.log("APPENDTEXT: text sent " + text + " at index " + this.textIndex);
             // Add Byte to Executable Image
-            this.image[this.textIndex] == text;
+            this.image[this.textIndex] = text;
             // EmitAction on Byte
             this.emitAction("Byte", text, { index: this.textIndex });
             // Increment Text Index

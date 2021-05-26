@@ -115,8 +115,9 @@ var CSCompiler;
                             case "Code Generation":
                                 // Init Code Generation for Executable Image
                                 _CodeGeneration.init(_SemanticAnalyzer.ast, _SemanticAnalyzer.symbolTable.root);
-                                // TODO:- Implement Code Generation Generate
-                                // _CodeGeneration.generate(_CodeGeneration.ast.root)
+                                _CodeGeneration.generate(_CodeGeneration.ast.root);
+                                // Announce Completion
+                                _Log.output({ level: "INFO", data: "Code Generation Complete. " + _CodeGeneration.errors + " ERROR(S)\n" });
                                 // Validate Successful Code Generation -- Output Executable Image
                                 if (_CodeGeneration.errors > 0) {
                                     _Log.output({ level: "", data: "--------------------" });
