@@ -21,7 +21,9 @@ module CSCompiler {
                     public scope = -1,
                     public textIndex = 0,
                     public heapIndex = 255,
+                    public activeJumps = [],
                     public boolPointers = {true: "", false: ""},
+                    public whilePointers = {start: 0, branch: 0},
                     public image = []) {}
 
         public init(ast: Tree, symbolTable: Tree) {
@@ -37,10 +39,12 @@ module CSCompiler {
             this.staticData = [];
             this.jumpData = [];
             this.heapData = [];
+            this.scope = -1;
             this.textIndex = 0;
             this.heapIndex = 256;
-            this.scope = -1;
+            this.activeJumps = [];
             this.boolPointers = {true: "", false: ""};
+            this.whilePointers = {start: 0, branch: 0}; 
             this.image = [];
 
             // Inititalize Executable Image
@@ -84,6 +88,11 @@ module CSCompiler {
                         // EmitAction on current Node + Get Basic Block Reference
                         this.emitAction("Production", node.name, node.data);
 
+                        // Check for White Statement Block -- Collect Start Point
+                        if (block.name == "WhileStatement") {
+                            this.whilePointers.start = this.textIndex;
+                        }
+
                         // Check if we need to Allocate First Segment
                         if (block.first.allocate) {
                             this.allocate(block.register, block.first.action, node.children[block.first.child]);
@@ -112,36 +121,39 @@ module CSCompiler {
                             block.final.generate();
                         }
 
+                        // On Block Exit -- Check if Distance can be Calculated for Active Jumps
+                        if (node.name == "Block") {
+                            if (this.activeJumps.length > 0) {
+                                // Check Parent of Current Nose to Determine Calculation
+                                if (node.parent == "WhileStatement") {
+                                    this.appendJump(this.activeJumps[1].value, padHex(((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase()));
+                                    this.appendJump(this.activeJumps[0].value, padHex(this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase()));
+
+                                    // Remove Jumps from Active List
+                                    this.activeJumps.filter((j) => { return j.jump.value != this.activeJumps[0].value || j.jump.value != this.activeJumps[1].value});
+
+                                } else {
+                                    // Calculate Distance for Jump
+                                    this.appendJump(this.activeJumps[0].value, padHex((this.textIndex - this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase()));
+
+                                    // Remove Jump from Active List
+                                    this.activeJumps.filter((j) => { return j.value != this.activeJumps[0].jump.value});
+                                }
+                            }
+                        }
                     } 
-                    
-                    // else {
-                    //     // Check if Node is Operator
-                    //     if (node.name == "+" || node.name == "==" || node.name == "!=") {
-                    //         // Generate Operator Text
-                    //         var temp = this.generateOperator(node);
-
-                    //         // Execute Comparison Generation
-                    //         this.generateComparison(node.parent.name, node, temp);
-                    //     }
-                    // }
-
-                    
-
-                    // Check for JumpFlag + UnconditionalFlag
-                    // TODO:- Implement JumpFlag Handeling
                 }
 
-            } else {                // [Base Case]
-
+            } else {                // [Base Case] - Exit
+                return; 
             }
-
         }
 
         /**
          * allocate(reg, action, node) 
          * - Allocate is used to generate the
          *   correct text for a specific Action
-         *   on a given Register
+         *   on a given Register.
          */
         public allocate(reg, action, node) {
             // Determine Node Type
@@ -152,8 +164,8 @@ module CSCompiler {
                 console.log("ALLOCATE: Returned from GetType w/ type " + data.type + " for " + node.name);
             }
 
-            if (this.comparisonFlag) {
-                //this.generateComparison(node.parent.name, node.name, data.value);
+            // Don't Execute Action on Operator Node
+            if (this.comparisonFlag || node.parent.name == "IfStatement" || node.parent.name == "WhileStatement") {
                 return; 
             }
             
@@ -180,7 +192,7 @@ module CSCompiler {
          * getType(node) : { type, value }
          * - GetType is used to recognize the
          *   type of Value we are dealing with
-         *   (Constant or Memory Pointer)
+         *   (Constant or Memory Pointer).
          */
         public getType(node) {
         var type = "";
@@ -210,7 +222,7 @@ module CSCompiler {
                     value = "0" + node.name;
                 }
             } else if (node.name.indexOf("\"") > -1) {
-                type = "Constant";
+                type = "Memory";
 
                 // Get Dynamic Pointer from Heap
                 value = this.appendHeap(node.name);
@@ -275,7 +287,6 @@ module CSCompiler {
         }
 
         public generateComparison(parent, node, address) {
-            console.log("GENCOMPARISON: Entered!");
             switch(parent) {
                 case "AssignmentStatement":
                     console.log("GENCOMPARISON: Recognized Parent AssignStatement");
@@ -301,13 +312,11 @@ module CSCompiler {
 
                         this.handleAcc("Load", "Constant", "01");
                         this.handleXReg("Load", "Constant", "00");
-
                         this.handleAcc("Store", "Memory", "00");
-
                         this.handleXReg("Compare", "Memory", "00");
-
                         this.handleAcc("Load", "Constant", this.boolPointers.false);
 
+                        // BNE 2 Bytes
                         this.appendText("D0");
                         this.appendText("02");
 
@@ -319,37 +328,97 @@ module CSCompiler {
                     if (node == "==") {
                         this.handleXReg("Compare", "Memory", address);
 
+                        // BNE 10 Bytes
                         this.appendText("D0");
                         this.appendText("0A");
 
                         this.handleYReg("Load", "Constant", this.boolPointers.true);
                         this.handleXReg("Load", "Memory", "FF");
-
                         this.handleXReg("Compare", "Memory", "FE");
 
+                        // BNE 2 Bytes
                         this.appendText("D0");
                         this.appendText("02");
 
                         this.handleYReg("Load", "Constant", this.boolPointers.false);
                         this.handleXReg("Load", "Constant", "02");
+
                     } else if (node == "!=") {
                         this.handleXReg("Compare", "Memory", address);
 
+                        // BNE 10 Bytes
                         this.appendText("D0");
                         this.appendText("0A");
 
                         this.handleYReg("Load", "Constant", this.boolPointers.false);
                         this.handleXReg("Load", "Memory", "FF");
-
                         this.handleXReg("Compare", "Memory", "FE");
 
+                        // BNE 2 Bytes
                         this.appendText("D0");
                         this.appendText("02");
 
                         this.handleYReg("Load", "Constant", this.boolPointers.true);
                         this.handleXReg("Load", "Constant", "02");
-                    } else {
+
+                    } else if (node == "+") {
                         this.handleYReg("Load", "Memory", address);
+                        this.handleXReg("Load", "Constant", "01");
+                    }
+                    break;
+
+                case "IfStatement":
+                case "WhileStatement":
+                    if (node == "true" || node == "false") {
+                        // Load X Reg w/ Respective Bool Value
+                        if (node == "true") {
+                            this.handleXReg("Load", "Memory", this.boolPointers.true);
+                        } else {
+                            this.handleXReg("Load", "Memory", this.boolPointers.false);
+                        }
+
+                        // Compare to True Pointer
+                        this.handleXReg("Compare", "Memory", this.boolPointers.true);
+                    } else if (node == "==") {
+                        // Compare X Reg to Default Address
+                        this.handleXReg("Compare", "Memory", address);
+
+                    } else if (node == "!=") {
+                        // Compare X Reg to Default Address
+                        this.handleXReg("Compare", "Memory", address);
+                        this.handleAcc("Load", "Constant", "00");
+
+                        // BNE 2 Bytes
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        // Flip Outcome for NOT
+                        this.handleAcc("Load", "Constant", "01");
+                        this.handleXReg("Load", "Constant", "00");
+                        this.handleAcc("Store", "Memory", "00");
+                        this.handleXReg("Compare", "Memory", "00");
+                    }
+
+                    // Additional Instuctions for If before Inner-Block Generation
+                    if (parent == "IfStatement") {
+                        this.appendText("D0");
+                        this.appendText(this.appendJump(this.jumpData.length))
+                    }
+                
+                    // Additional Instructions for While before Inner-Block Generation
+                    if (parent == "WhileStatement") {
+                        this.handleAcc("Load", "Constant", "01");
+                        
+                        this.appendText("D0");
+                        this.appendText("02");
+
+                        this.handleAcc("Load", "Constant", "00");
+                        this.handleXReg("Load", "Constant", "00");
+                        this.handleAcc("Store", "Memory", "00");
+                        this.handleXReg("Compare", "Memory", "00");
+                        
+                        this.appendText("D0");
+                        this.appendText(this.appendJump(this.jumpData.length));
                     }
                     break;
 
@@ -410,7 +479,7 @@ module CSCompiler {
                     if (type == "Memory") {
                         this.appendText("AC");
                         this.appendText(value);
-                        this.appendText("XX");
+                        this.appendText("00");
                     } else {
                         this.appendText("A0");
                         this.appendText(value);
@@ -472,6 +541,7 @@ module CSCompiler {
 
                 default:
                     console.log("Unrecognized Action for X Register");
+                    break;
             }
         }
 
@@ -500,7 +570,7 @@ module CSCompiler {
         }
 
         /**
-         * appendStack(id, scope)
+         * appendStack(id, scope) : String
          * - AppendStack handles creating new
          *   static entries into our StaticData.
          *   Also can recognize duplicate entries in
@@ -522,6 +592,45 @@ module CSCompiler {
                 
             } else {
                 return pointer;
+            }
+        }
+
+        /**
+         * appendJump(dist?) 
+         * - AppendJump is used to create entries 
+         *   to our JumpData. It will return a new
+         *   temporary jump ID. Dist is used for sitautions
+         *   when we want to update the distance of
+         *   a entry.
+         */
+        public appendJump(id, dist?) {
+            // Check if Entry Exists
+            var value = this.getEntry(id, this.jumpData);
+
+            if (value == "") {
+                // Generate New Jump Object
+                var entry = {value: "J" + this.jumpData.length, distance: 0, start: this.textIndex - 1};
+
+                // Check if Distance is already known
+                if (dist) {
+                    entry.distance = dist;
+                }
+
+                // Push Entry to Jump Data + ActiveJumps
+                this.jumpData.push(entry);
+                this.activeJumps.push(entry);
+
+                return entry.value;
+            } else {
+                // Convert Dist to Hex
+                dist = dist.toString(16).toLocaleUpperCase();
+
+                for (var j in this.jumpData) {
+                    if (this.jumpData[j].value = id) {
+                        this.jumpData[j].distance = dist;
+                        return dist; 
+                    }
+                }
             }
         }
 
@@ -562,8 +671,7 @@ module CSCompiler {
                 entry.pointer = (this.heapIndex + 1).toString(16).toLocaleUpperCase()
                 this.heapData.push(entry);
 
-                return (this.heapIndex + 1).toString(16).toLocaleUpperCase();
-                
+                return (this.heapIndex + 1).toString(16).toLocaleUpperCase();   
             } else {
                 return pointer
             }
@@ -592,18 +700,16 @@ module CSCompiler {
                     }
                 }
             }
-
             return pointer; 
         }
 
         /**
          * emitAction(type, value, data?) 
          * - EmitAction is used to format our 
-         *   messages for Log Output
+         *   messages for Log Output.
          */
          public emitAction(type, value, data?) {
             var data;
-
             switch(type) {
                 case "Production":
                     data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
@@ -623,7 +729,6 @@ module CSCompiler {
 
         public emitError(type, data?) {
             var data;
-
             switch(type) {
                 case "Unsupported":
                     data = "Nested Boolean Expressions are currently unsupported";
@@ -645,7 +750,7 @@ module CSCompiler {
         /**
          * initImage
          * - InitImage is used to initialize all bytes in
-         *   our Executable Image to 00
+         *   our Executable Image to 00.
          */
         public initImage() {
             for (var i = 0; i < 256; i++) {

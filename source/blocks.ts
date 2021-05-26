@@ -9,7 +9,6 @@
     Register - Used to Determine what Register is needed to handle First Action
     First - Used to instruct Code Generation on how to allocate the first child that is expected.
     Final - Used to instruct Code Generation on how to allocate the Final Child or Flip Required Flags
-    Sequence = Used to determine the order that Code Generation should follow to fulfill the Block
 
     Within First & Final there is a potential attribute known as Allocate. 
         True    - Signifies for this action allocate generation to one our our Register Handlers. 
@@ -20,11 +19,25 @@
 ----- */
 
 var _Blocks = [
-    {name: "VarDecl", register: "Acc", first: {allocate: true, child: null, action: "Load"}, 
+    { name: "VarDecl",              register: "Acc", first: {allocate: true, child: null, action: "Load"}, 
         final: {allocate: true, child: 1, action: "Store"}, },
-    {name: "AssignmentStatement", register: "Acc", first: {allocate: true, child: 1, action: "Load"}, 
+    { name: "AssignmentStatement",  register: "Acc", first: {allocate: true, child: 1, action: "Load"}, 
         final: {allocate: true, child: 0, action: "Store"}},
-    {name: "PrintStatement", register: "YReg", first: {allocate: true, child: 0, action: "Load-print"}, 
-        final: { allocate: false, generate: function() { _CodeGeneration.appendText("FF")} }},
+    { name: "PrintStatement",       register: "YReg", first: {allocate: true, child: 0, action: "Load-print"}, 
+        final: { allocate: false, generate: function() { _CodeGeneration.appendText("FF"); } }},
+    { name: "IfStatement", register: "XReg", first: {allocate: true, child: 0, action: "Compare"},
+       final: { allocate: false, generate: function() { return }}},
+    { name: "WhileStatement", register: "XReg", first: {allocate: true, child: 0, action: "Compare"},
+       final: { allocate: false,
+                generate: function() {
+                    _CodeGeneration.handleAcc("Load", "Constant", "00");
+                    _CodeGeneration.handleAcc("Store", "Memory", "00");
+                    _CodeGeneration.handleXReg("Load", "Constant", "01");
+                    _CodeGeneration.handleXReg("Compare", "Constant", "00");
+                    _CodeGeneration.appendText("D0");
+                    _CodeGeneration.appendText(_CodeGeneration.appendJump(_CodeGeneration.jumpData.length)); 
+                    
+                }}}
+    
 
 ]

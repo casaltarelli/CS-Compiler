@@ -55,7 +55,7 @@ var padEnd = function (s, targetLength, padString) {
     return s;
 };
 // Hex Padding
-var padHed = function (s) {
+var padHex = function (s) {
     while (s.length > 2) {
         // Pad Hex Value
         s = "0" + s;

@@ -10,7 +10,7 @@
 var CSCompiler;
 (function (CSCompiler) {
     var CodeGeneration = /** @class */ (function () {
-        function CodeGeneration(ast, symbolTable, errors, generating, comparisonFlag, staticData, jumpData, heapData, scope, textIndex, heapIndex, boolPointers, image) {
+        function CodeGeneration(ast, symbolTable, errors, generating, comparisonFlag, staticData, jumpData, heapData, scope, textIndex, heapIndex, activeJumps, boolPointers, whilePointers, image) {
             if (ast === void 0) { ast = null; }
             if (symbolTable === void 0) { symbolTable = null; }
             if (errors === void 0) { errors = 0; }
@@ -22,7 +22,9 @@ var CSCompiler;
             if (scope === void 0) { scope = -1; }
             if (textIndex === void 0) { textIndex = 0; }
             if (heapIndex === void 0) { heapIndex = 255; }
+            if (activeJumps === void 0) { activeJumps = []; }
             if (boolPointers === void 0) { boolPointers = { "true": "", "false": "" }; }
+            if (whilePointers === void 0) { whilePointers = { start: 0, branch: 0 }; }
             if (image === void 0) { image = []; }
             this.ast = ast;
             this.symbolTable = symbolTable;
@@ -35,7 +37,9 @@ var CSCompiler;
             this.scope = scope;
             this.textIndex = textIndex;
             this.heapIndex = heapIndex;
+            this.activeJumps = activeJumps;
             this.boolPointers = boolPointers;
+            this.whilePointers = whilePointers;
             this.image = image;
         }
         CodeGeneration.prototype.init = function (ast, symbolTable) {
@@ -50,10 +54,12 @@ var CSCompiler;
             this.staticData = [];
             this.jumpData = [];
             this.heapData = [];
+            this.scope = -1;
             this.textIndex = 0;
             this.heapIndex = 256;
-            this.scope = -1;
+            this.activeJumps = [];
             this.boolPointers = { "true": "", "false": "" };
+            this.whilePointers = { start: 0, branch: 0 };
             this.image = [];
             // Inititalize Executable Image
             this.initImage();
@@ -69,6 +75,7 @@ var CSCompiler;
          *   AST.
          */
         CodeGeneration.prototype.generate = function (node) {
+            var _this = this;
             if (this.generating) { // [General Case]
                 console.log("GENERATE: Current Node: " + node.name);
                 // Update Visited Flag on Node
@@ -91,6 +98,10 @@ var CSCompiler;
                         console.log(node.name + " found in Blocks");
                         // EmitAction on current Node + Get Basic Block Reference
                         this.emitAction("Production", node.name, node.data);
+                        // Check for White Statement Block -- Collect Start Point
+                        if (block.name == "WhileStatement") {
+                            this.whilePointers.start = this.textIndex;
+                        }
                         // Check if we need to Allocate First Segment
                         if (block.first.allocate) {
                             this.allocate(block.register, block.first.action, node.children[block.first.child]);
@@ -116,28 +127,36 @@ var CSCompiler;
                         else {
                             block.final.generate();
                         }
+                        // On Block Exit -- Check if Distance can be Calculated for Active Jumps
+                        if (node.name == "Block") {
+                            if (this.activeJumps.length > 0) {
+                                // Check Parent of Current Nose to Determine Calculation
+                                if (node.parent == "WhileStatement") {
+                                    this.appendJump(this.activeJumps[1].value, padHex(((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase()));
+                                    this.appendJump(this.activeJumps[0].value, padHex(this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase()));
+                                    // Remove Jumps from Active List
+                                    this.activeJumps.filter(function (j) { return j.jump.value != _this.activeJumps[0].value || j.jump.value != _this.activeJumps[1].value; });
+                                }
+                                else {
+                                    // Calculate Distance for Jump
+                                    this.appendJump(this.activeJumps[0].value, padHex((this.textIndex - this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase()));
+                                    // Remove Jump from Active List
+                                    this.activeJumps.filter(function (j) { return j.value != _this.activeJumps[0].jump.value; });
+                                }
+                            }
+                        }
                     }
-                    // else {
-                    //     // Check if Node is Operator
-                    //     if (node.name == "+" || node.name == "==" || node.name == "!=") {
-                    //         // Generate Operator Text
-                    //         var temp = this.generateOperator(node);
-                    //         // Execute Comparison Generation
-                    //         this.generateComparison(node.parent.name, node, temp);
-                    //     }
-                    // }
-                    // Check for JumpFlag + UnconditionalFlag
-                    // TODO:- Implement JumpFlag Handeling
                 }
             }
-            else { // [Base Case]
+            else { // [Base Case] - Exit
+                return;
             }
         };
         /**
          * allocate(reg, action, node)
          * - Allocate is used to generate the
          *   correct text for a specific Action
-         *   on a given Register
+         *   on a given Register.
          */
         CodeGeneration.prototype.allocate = function (reg, action, node) {
             // Determine Node Type
@@ -146,8 +165,8 @@ var CSCompiler;
             if (node != null) {
                 console.log("ALLOCATE: Returned from GetType w/ type " + data.type + " for " + node.name);
             }
-            if (this.comparisonFlag) {
-                //this.generateComparison(node.parent.name, node.name, data.value);
+            // Don't Execute Action on Operator Node
+            if (this.comparisonFlag || node.parent.name == "IfStatement" || node.parent.name == "WhileStatement") {
                 return;
             }
             switch (reg) {
@@ -171,7 +190,7 @@ var CSCompiler;
          * getType(node) : { type, value }
          * - GetType is used to recognize the
          *   type of Value we are dealing with
-         *   (Constant or Memory Pointer)
+         *   (Constant or Memory Pointer).
          */
         CodeGeneration.prototype.getType = function (node) {
             var type = "";
@@ -204,7 +223,7 @@ var CSCompiler;
                     }
                 }
                 else if (node.name.indexOf("\"") > -1) {
-                    type = "Constant";
+                    type = "Memory";
                     // Get Dynamic Pointer from Heap
                     value = this.appendHeap(node.name);
                 }
@@ -255,7 +274,6 @@ var CSCompiler;
             return "00";
         };
         CodeGeneration.prototype.generateComparison = function (parent, node, address) {
-            console.log("GENCOMPARISON: Entered!");
             switch (parent) {
                 case "AssignmentStatement":
                     console.log("GENCOMPARISON: Recognized Parent AssignStatement");
@@ -280,6 +298,7 @@ var CSCompiler;
                         this.handleAcc("Store", "Memory", "00");
                         this.handleXReg("Compare", "Memory", "00");
                         this.handleAcc("Load", "Constant", this.boolPointers["false"]);
+                        // BNE 2 Bytes
                         this.appendText("D0");
                         this.appendText("02");
                         this.handleAcc("Load", "Constant", this.boolPointers["true"]);
@@ -288,11 +307,13 @@ var CSCompiler;
                 case "PrintStatement":
                     if (node == "==") {
                         this.handleXReg("Compare", "Memory", address);
+                        // BNE 10 Bytes
                         this.appendText("D0");
                         this.appendText("0A");
                         this.handleYReg("Load", "Constant", this.boolPointers["true"]);
                         this.handleXReg("Load", "Memory", "FF");
                         this.handleXReg("Compare", "Memory", "FE");
+                        // BNE 2 Bytes
                         this.appendText("D0");
                         this.appendText("02");
                         this.handleYReg("Load", "Constant", this.boolPointers["false"]);
@@ -300,18 +321,69 @@ var CSCompiler;
                     }
                     else if (node == "!=") {
                         this.handleXReg("Compare", "Memory", address);
+                        // BNE 10 Bytes
                         this.appendText("D0");
                         this.appendText("0A");
                         this.handleYReg("Load", "Constant", this.boolPointers["false"]);
                         this.handleXReg("Load", "Memory", "FF");
                         this.handleXReg("Compare", "Memory", "FE");
+                        // BNE 2 Bytes
                         this.appendText("D0");
                         this.appendText("02");
                         this.handleYReg("Load", "Constant", this.boolPointers["true"]);
                         this.handleXReg("Load", "Constant", "02");
                     }
-                    else {
+                    else if (node == "+") {
                         this.handleYReg("Load", "Memory", address);
+                        this.handleXReg("Load", "Constant", "01");
+                    }
+                    break;
+                case "IfStatement":
+                case "WhileStatement":
+                    if (node == "true" || node == "false") {
+                        // Load X Reg w/ Respective Bool Value
+                        if (node == "true") {
+                            this.handleXReg("Load", "Memory", this.boolPointers["true"]);
+                        }
+                        else {
+                            this.handleXReg("Load", "Memory", this.boolPointers["false"]);
+                        }
+                        // Compare to True Pointer
+                        this.handleXReg("Compare", "Memory", this.boolPointers["true"]);
+                    }
+                    else if (node == "==") {
+                        // Compare X Reg to Default Address
+                        this.handleXReg("Compare", "Memory", address);
+                    }
+                    else if (node == "!=") {
+                        // Compare X Reg to Default Address
+                        this.handleXReg("Compare", "Memory", address);
+                        this.handleAcc("Load", "Constant", "00");
+                        // BNE 2 Bytes
+                        this.appendText("D0");
+                        this.appendText("02");
+                        // Flip Outcome for NOT
+                        this.handleAcc("Load", "Constant", "01");
+                        this.handleXReg("Load", "Constant", "00");
+                        this.handleAcc("Store", "Memory", "00");
+                        this.handleXReg("Compare", "Memory", "00");
+                    }
+                    // Additional Instuctions for If before Inner-Block Generation
+                    if (parent == "IfStatement") {
+                        this.appendText("D0");
+                        this.appendText(this.appendJump(this.jumpData.length));
+                    }
+                    // Additional Instructions for While before Inner-Block Generation
+                    if (parent == "WhileStatement") {
+                        this.handleAcc("Load", "Constant", "01");
+                        this.appendText("D0");
+                        this.appendText("02");
+                        this.handleAcc("Load", "Constant", "00");
+                        this.handleXReg("Load", "Constant", "00");
+                        this.handleAcc("Store", "Memory", "00");
+                        this.handleXReg("Compare", "Memory", "00");
+                        this.appendText("D0");
+                        this.appendText(this.appendJump(this.jumpData.length));
                     }
                     break;
                 default:
@@ -368,7 +440,7 @@ var CSCompiler;
                     if (type == "Memory") {
                         this.appendText("AC");
                         this.appendText(value);
-                        this.appendText("XX");
+                        this.appendText("00");
                     }
                     else {
                         this.appendText("A0");
@@ -426,6 +498,7 @@ var CSCompiler;
                     break;
                 default:
                     console.log("Unrecognized Action for X Register");
+                    break;
             }
         };
         /**
@@ -448,7 +521,7 @@ var CSCompiler;
             }
         };
         /**
-         * appendStack(id, scope)
+         * appendStack(id, scope) : String
          * - AppendStack handles creating new
          *   static entries into our StaticData.
          *   Also can recognize duplicate entries in
@@ -467,6 +540,40 @@ var CSCompiler;
             }
             else {
                 return pointer;
+            }
+        };
+        /**
+         * appendJump(dist?)
+         * - AppendJump is used to create entries
+         *   to our JumpData. It will return a new
+         *   temporary jump ID. Dist is used for sitautions
+         *   when we want to update the distance of
+         *   a entry.
+         */
+        CodeGeneration.prototype.appendJump = function (id, dist) {
+            // Check if Entry Exists
+            var value = this.getEntry(id, this.jumpData);
+            if (value == "") {
+                // Generate New Jump Object
+                var entry = { value: "J" + this.jumpData.length, distance: 0, start: this.textIndex - 1 };
+                // Check if Distance is already known
+                if (dist) {
+                    entry.distance = dist;
+                }
+                // Push Entry to Jump Data + ActiveJumps
+                this.jumpData.push(entry);
+                this.activeJumps.push(entry);
+                return entry.value;
+            }
+            else {
+                // Convert Dist to Hex
+                dist = dist.toString(16).toLocaleUpperCase();
+                for (var j in this.jumpData) {
+                    if (this.jumpData[j].value = id) {
+                        this.jumpData[j].distance = dist;
+                        return dist;
+                    }
+                }
             }
         };
         /**
@@ -533,7 +640,7 @@ var CSCompiler;
         /**
          * emitAction(type, value, data?)
          * - EmitAction is used to format our
-         *   messages for Log Output
+         *   messages for Log Output.
          */
         CodeGeneration.prototype.emitAction = function (type, value, data) {
             var data;
@@ -569,7 +676,7 @@ var CSCompiler;
         /**
          * initImage
          * - InitImage is used to initialize all bytes in
-         *   our Executable Image to 00
+         *   our Executable Image to 00.
          */
         CodeGeneration.prototype.initImage = function () {
             for (var i = 0; i < 256; i++) {
