@@ -213,15 +213,6 @@ body {
 
 }
 
-.code-output:focus {
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
-    box-shadow: none;
-
-    border: none;
-    outline: none;
-}
-
 /* -- Footer */
 .footer {
     position: fixed;

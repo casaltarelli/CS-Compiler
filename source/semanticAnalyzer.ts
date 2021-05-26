@@ -543,7 +543,6 @@ module CSCompiler {
 
                 case "UNUSED-DEC":
                     data = "Variable Declared but never used [ " + name + " ] on line: " + info.line + " col: " + info.col;
-                    console.log("Hit on Usused!");
                     break;
 
                 case "UNUSED-INIT":
@@ -608,8 +607,6 @@ module CSCompiler {
         public scan(node) {
             // Get Table Reference for Node
             var table = node.table;
-
-            console.log("Scanning Symbol Table for Scope: " + node.scope);
 
             for (var i = 0; i < table.keys.length; i++) {
                 // Get Direct Reference to Table Entry Values
