@@ -79,6 +79,8 @@ var CSCompiler;
                     else if (_Stage == "Semantic Analysis") {
                         this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                     }
+                    else if (_Stage == "Code Generation") {
+                    }
                     break;
                 case "WARN":
                     this.log.value += "WARN - " + _Stage + " - " + msg.data + "\n";

@@ -56,6 +56,26 @@ var CSCompiler;
             this.boolPointers["false"] = this.appendHeap("false");
         };
         /**
+         * emitAction(type, value, data?)
+         * - EmitAction is used to format our
+         *   messages for Log Output
+         */
+        CodeGeneration.prototype.emitAction = function (type, value, data) {
+            var data;
+            switch (type) {
+                case "Production":
+                    data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
+                    break;
+                case "Entry":
+                    data = "Generating " + value;
+                    break;
+                default:
+                    break;
+            }
+            // Output Symbol Table Entry to User
+            _Log.output({ level: "DEBUG", data: data });
+        };
+        /**
          * appendHeap(s) : String
          * - AppendHeap is used to add new
          *   dynamic/reference variables to our Heap.
@@ -95,6 +115,7 @@ var CSCompiler;
          * getEntry(name, list)
          * - GetEntry is used to determine if an entry in
          *   the given list exists. If so, returns the static
+         *   pointer or empty pointer to signify no entry.
          */
         CodeGeneration.prototype.getEntry = function (value, list) {
             var pointer = "";

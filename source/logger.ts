@@ -81,6 +81,8 @@
                                             + " col: " + msg.data.loc.col + "\n";
                         } else if (_Stage == "Semantic Analysis") {
                             this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
+                        } else if (_Stage == "Code Generation") {
+
                         }
                         
                         break;

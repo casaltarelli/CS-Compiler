@@ -484,6 +484,11 @@ var CSCompiler;
             }
             return reference;
         };
+        /**
+         * emitEntry(type, name, info)
+         * - EmitEntry handles generating our
+         *   Log Output througout our analysis phase.
+         */
         SemanticAnalyzer.prototype.emitEntry = function (type, name, info) {
             var data;
             switch (type) {

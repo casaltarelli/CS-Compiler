@@ -503,6 +503,11 @@ module CSCompiler {
             return reference;
         }
 
+        /**
+         * emitEntry(type, name, info)
+         * - EmitEntry handles generating our
+         *   Log Output througout our analysis phase. 
+         */
         public emitEntry(type, name, info) {
             var data;
 
