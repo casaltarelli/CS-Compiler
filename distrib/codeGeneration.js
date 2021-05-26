@@ -80,13 +80,23 @@ var CSCompiler;
                     // Get Block Reference for Production
                     var block = _Blocks.filter(function (b) { return b.name == node.name; })[0];
                     if (block) {
-                        // Allocate First of Block
-                        this.allocate(block.register, block.first.action, node.children[block.first.child]);
+                        // Check if we need to Allocate First Segment
+                        if (block.first.allocate) {
+                            this.allocate(block.register, block.first.action, node.children[block.first.child]);
+                        }
                         // Proceed to Children for current Node
                         for (var child in node.children) {
                             if (!(node.children[child].visited)) {
+                                // TODO:- Develop Check for Operator Child
                                 this.generate(node.children[child]);
                             }
+                        }
+                        // Check if we need to Allocate for Final Segment
+                        if (block.final.allocate) {
+                            this.allocate(block.register, block.final.action, node.children[block.final.child]);
+                        }
+                        else {
+                            block.final.generate();
                         }
                     }
                     // Check for JumpFlag + UnconditionalFlag
@@ -103,6 +113,8 @@ var CSCompiler;
          *   on a given Register
          */
         CodeGeneration.prototype.allocate = function (reg, action, node) {
+            // Update Visited Flag on Child Node
+            node.visited = true;
             // Determine Node Type
             var data = this.getType(node);
             switch (reg) {
@@ -134,7 +146,7 @@ var CSCompiler;
                     if (type == "Memory") {
                         this.appendText("AD");
                         this.appendText(value);
-                        this.appendText("XX");
+                        this.appendText("00");
                     }
                     else {
                         this.appendText("A9");
@@ -146,7 +158,7 @@ var CSCompiler;
                     if (type == "Memory") {
                         this.appendText("8D");
                         this.appendText(value);
-                        this.appendText("XX");
+                        this.appendText("00");
                     }
                     break;
                 default:
@@ -179,7 +191,7 @@ var CSCompiler;
                     if (type == "Memory") {
                         this.appendText("AC");
                         this.appendText(value);
-                        this.appendText("XX");
+                        this.appendText("00");
                         // Load X Reg w/ 02
                         this.handleXReg("load", "Constant", "02");
                     }
@@ -195,13 +207,21 @@ var CSCompiler;
                     break;
             }
         };
+        /**
+         * handleXReg(action, type, value)
+         * - HandleXReg allows for us to generate
+         *   any needed Op Codes regarding the X Reg.
+         *   Action determines what sequence to follow,
+         *   with Type directing on how to handle the
+         *   value given.
+         */
         CodeGeneration.prototype.handleXReg = function (action, type, value) {
             switch (action) {
                 case "load":
                     if (type == "Memory") {
                         this.appendText("AE");
                         this.appendText(value);
-                        this.appendText("XX");
+                        this.appendText("00");
                     }
                     else {
                         this.appendText("A2");
@@ -209,6 +229,40 @@ var CSCompiler;
                     }
                     break;
             }
+        };
+        CodeGeneration.prototype.generateOperator = function (node) {
+            // EmitAction on Current Operator
+            this.emitAction("Production", node.name, node.data);
+            switch (node.name) {
+                case "+":
+                    // Get Type of RHS
+                    var data = this.getType(node.children[1]);
+                    // Load Acc + Store in Memory at Default Location
+                    this.handleAcc("load", data.type, data.value);
+                    this.handleAcc("store", "Memory", "00");
+                    // Load Acc w/ LHS
+                    this.handleAcc("load", "Constant", node.children[0].name);
+                    // Manually Append Add w/ Carry
+                    this.appendText("6D");
+                    this.appendText("00");
+                    this.appendText("00");
+                    // Store Sum at Default Location
+                    this.handleAcc("store", "Memory", "00");
+                    break;
+                case "==":
+                case "!=":
+                    // Get Type of LHS
+                    var data = this.getType(node.children[0]);
+                    // Load X Reg w/ LHS
+                    this.handleXReg("load", data.type, data.value);
+                    // Get Type of RHS
+                    data = this.getType(node.children[1]);
+                    // Load Acc w/ RHS + Store at Default Location
+                    this.handleAcc("load", data.type, data.value);
+                    this.handleAcc("store", "Memory", "00");
+            }
+            // Return Default Location
+            return "00";
         };
         /**
          * getType(node) : { type, value }
@@ -222,9 +276,14 @@ var CSCompiler;
             // Validate Not Null [Default Value Case]
             if (node != null) {
                 if (node.children.length != 0) {
-                    // Looking at Operator
-                    // TODO:- Develop generateOperator
-                    // return 
+                    // Check for Nested Operator
+                    if (node.parent.name != "==" || node.parent.name != "!=") {
+                        type = "Memory";
+                        value = this.generateOperator(node);
+                    }
+                    else {
+                        // TODO:- Develop EmitError 
+                    }
                 }
                 else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
                     type = "Constant";
@@ -239,7 +298,7 @@ var CSCompiler;
                     }
                 }
                 else if (node.name.indexOf("\"") > -1) {
-                    type = "Memory";
+                    type = "Constant";
                     // Get Dynamic Pointer from Heap
                     value = this.appendHeap(node.name);
                 }
@@ -268,7 +327,10 @@ var CSCompiler;
             this.emitAction("Byte", text, { index: this.textIndex });
             // Increment Text Index
             this.textIndex++;
-            // TODO:- Implement Collision Check
+            if (this.textIndex >= this.heapIndex) {
+                // EmitError for Text + Heap Collision
+                this.emitError("Collision", { first: "Stack", second: "Heap" });
+            }
         };
         /**
          * appendStack(id, scope)
@@ -286,7 +348,7 @@ var CSCompiler;
                 var entry = { pointer: temp, value: id, scope: scope, location: "" };
                 // Push to staticData
                 this.staticData.push(entry);
-                return entry.pointer.substr(0, 2);
+                return entry.pointer;
             }
             else {
                 return pointer;
@@ -370,8 +432,24 @@ var CSCompiler;
                 default:
                     break;
             }
-            // Output Symbol Table Entry to User
+            // Output Image Entry to User
             _Log.output({ level: "DEBUG", data: data });
+        };
+        CodeGeneration.prototype.emitError = function (type, data) {
+            var data;
+            switch (type) {
+                case "Unsupported":
+                    data = "Nested Boolean Expressions are currently unsupported";
+                    break;
+                case "Collision":
+                    data = "Collison between [ " + data.first + " ] and [ " + data.second + " ] generation terminated";
+                    break;
+            }
+            // Update Errors Counter + Output to User
+            this.errors++;
+            _Log.output({ level: "ERROR", data: data });
+            // Update Generating Flag to False
+            this.generating = false;
         };
         /**
          * initImage
