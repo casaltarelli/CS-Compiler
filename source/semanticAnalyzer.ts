@@ -18,8 +18,8 @@ module CSCompiler {
             public analyzing = true,
             public count = 0) {}
 
-        public init(cst: Tree ): void {
-            // Announce Parser
+        public init(cst: Tree): void {
+            // Announce Semantic Analysis
             _Log.output({level: "INFO", data: "Starting Semantic Analysis..."});
 
             // Default Attributes

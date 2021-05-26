@@ -29,7 +29,7 @@ var CSCompiler;
             this.count = count;
         }
         SemanticAnalyzer.prototype.init = function (cst) {
-            // Announce Parser
+            // Announce Semantic Analysis
             _Log.output({ level: "INFO", data: "Starting Semantic Analysis..." });
             // Default Attributes
             this.cst = cst;
@@ -52,7 +52,6 @@ var CSCompiler;
         SemanticAnalyzer.prototype.build = function (node) {
             var essentialFlag = false;
             var operationFlag = false;
-            console.log("Current Node: " + node.name);
             if (this.analyzing == true) {
                 // Update Visited Flag on Node 
                 node.visited = true;
@@ -225,14 +224,9 @@ var CSCompiler;
          *   Boolean flag symbolizing success or fail.
          */
         SemanticAnalyzer.prototype.analyze = function (node) {
-            console.log("Current Node: " + node.name);
-            for (var c in node.children) {
-                console.log("Child Node: " + node.children[c].name);
-            }
             // Update our Symbol Table based on Node
             switch (node.name) {
                 case "VarDecl":
-                    console.log("Entering VarDecl");
                     // Get Type + Identifier
                     var type = node.children[0];
                     var id = node.children[1];
@@ -253,7 +247,6 @@ var CSCompiler;
                     }
                     break;
                 case "AssignmentStatement":
-                    console.log("Entering AssignStatement");
                     // Get ID + Expr
                     var id = node.children[0];
                     var expr = node.children[1];
@@ -372,7 +365,6 @@ var CSCompiler;
                 case "==":
                 case "!=": // Utilize Waterfall for Operators
                 case "+":
-                    console.log("Entering Operator");
                     // Get Exprs
                     var exprs = [node.children[0], node.children[1]];
                     var types = [];
@@ -380,10 +372,8 @@ var CSCompiler;
                     for (var e in exprs) {
                         // Check if Expr is Inner-Operator instance
                         if (!(exprs[e].children.length)) {
-                            console.log("Recognized No Children for Child Node: " + exprs[e].name);
                             // Get Type
                             var tempType = this.getType(exprs[e]);
-                            console.log("Type Returned for Child: " + tempType);
                             if (tempType == "id") {
                                 // Get ID Reference
                                 var reference = this.getReference(exprs[e]);

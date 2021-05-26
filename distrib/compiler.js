@@ -28,6 +28,7 @@ var CSCompiler;
             _Lexer = new CSCompiler.Lexer();
             _Parser = new CSCompiler.Parser();
             _SemanticAnalyzer = new CSCompiler.SemanticAnalyzer();
+            _CodeGeneration = new CSCompiler.CodeGeneration();
             // Validate Input from User
             if (source) {
                 // Reset PID + TokenStream for new compilation
@@ -109,6 +110,25 @@ var CSCompiler;
                                     // Output Symbol Table to Log
                                     _Log.output({ level: "", data: "Symbol Table generated for program " + _PID });
                                     _Log.output({ level: "", data: _SemanticAnalyzer.symbolTable.toStringTable() });
+                                }
+                                break;
+                            case "Code Generation":
+                                // Init Code Generation for Executable Image
+                                _CodeGeneration.init(_SemanticAnalyzer.ast, _SemanticAnalyzer.symbolTable.root);
+                                // TODO:- Implement Code Generation Generate
+                                // _CodeGeneration.generate(_CodeGeneration.ast.root)
+                                // Validate Successful Code Generation -- Output Executable Image
+                                if (_CodeGeneration.errors > 0) {
+                                    _Log.output({ level: "", data: "--------------------" });
+                                    _Log.output({ level: "INFO", data: "Compliation Stopped due to Code Generation error(s)..." });
+                                    break out;
+                                }
+                                else {
+                                    // Add Validated Executable Image to Global Reference
+                                    _Images.push(_CodeGeneration.image);
+                                    // Output Executable Image to Log
+                                    _Log.output({ level: "", data: "--------------------" });
+                                    _Log.output({ level: "", data: _CodeGeneration.image.join(" ") }, true);
                                 }
                                 break;
                             default:

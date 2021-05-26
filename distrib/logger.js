@@ -7,10 +7,12 @@
 var CSCompiler;
 (function (CSCompiler) {
     var Logger = /** @class */ (function () {
-        function Logger(log, mode) {
+        function Logger(log, code, mode) {
             if (log === void 0) { log = document.getElementById("log-output"); }
+            if (code === void 0) { code = document.getElementById("code-output"); }
             if (mode === void 0) { mode = "verbose"; }
             this.log = log;
+            this.code = code;
             this.mode = mode;
         }
         Logger.prototype.init = function () {
@@ -42,14 +44,15 @@ var CSCompiler;
             }
         };
         /**
-         * output(msg)
+         * output(msg, flag?)
          * - Output handles writing to our Log within our UI,
          *   it expects a msg Object which allows for us to
-         *   properly format data to our User.
+         *   properly format data to our User. Flag is used
+         *   to signifiy population of our Code Output
          */
-        Logger.prototype.output = function (msg) {
+        Logger.prototype.output = function (msg, flag) {
             // Validate Verbose Mode
-            if (!_Verbose && msg.level != "INFO") {
+            if (!_Verbose && (msg.level != "INFO" || msg.level != "")) {
                 return;
             }
             // Determine Msg Type for Output Formatting
@@ -84,7 +87,12 @@ var CSCompiler;
                     this.log.value += "ERROR - " + _Stage + " - " + msg.data + "\n";
                     break;
                 default:
-                    this.log.value += msg.data + "\n";
+                    if (flag) {
+                        this.code.value += msg.data;
+                    }
+                    else {
+                        this.log.value += msg.data + "\n";
+                    }
                     break;
             }
             // Automatically Scroll to Bottom if overflow

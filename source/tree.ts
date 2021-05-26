@@ -177,7 +177,7 @@ module CSCompiler {
             collect(this.root);
 
             data += "|-----------------------------|\n";
-
+            
             return data;
         }
     }
