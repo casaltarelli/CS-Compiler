@@ -68,14 +68,8 @@ module CSCompiler {
                     }
 
                     if (!(operationFlag)) {
-                        if (node.name == "Block") {
-                            // Asdd Node to AST Definition
-                            this.ast.addNode("Non-Terminal", node.name + this.count.toString(), {line: node.data.line, col: node.data.col});
-                            this.count++;
-                        } else {
-                            // Add Node to AST Definition
-                            this.ast.addNode("Non-Terminal", node.name, {line: node.data.line, col: node.data.col});
-                        }
+                        // Add Node to AST Definition
+                        this.ast.addNode("Non-Terminal", node.name, {line: node.data.line, col: node.data.col});
 
                         // Check for Node "Block" -- Update Symbol Table Scope
                         if (node.name == "Block") {
@@ -281,79 +275,81 @@ module CSCompiler {
                     var reference = this.getReference(id);
 
                     if (reference != -1) {
-                        // Verify Decleration of ID
-                        if (reference.declared.status == true) {
-                            // Check for Inner-Operator instance
-                            if (!(expr.children.length)) {
-                                // Check if Expr is ID
-                                var exprType = this.getType(expr); 
+                        // Check for Inner-Operator instance on Expr
+                        if (!(expr.children.length)) {
+                            // Check if Expr is ID
+                            var exprType = this.getType(expr); 
 
-                                if (exprType == "id") {
-                                    // Get ID Reference
-                                    var tempReference = this.getReference(expr);
+                            if (exprType == "id") {
+                                // Get ID Reference
+                                var tempReference = this.getReference(expr);
 
-                                    if (tempReference != -1) {
-                                        // Check Decleration Attribute
-                                        if (tempReference.declared.status == true) {
-                                            // Validate Types
-                                            if (reference.type == tempReference.type) {
-                                                // Push New Init Attribute for ID + EmitEntry 
-                                                reference.initalized.push({line: id.data.line, col: id.data.col});
-                                                this.emitEntry("INIT", id.name, {type: reference.type, 
-                                                    line: id.data.line,
-                                                    col: id.data.col});
+                                if (tempReference != -1) {
+                                    // Check Decleration Attribute
+                                    if (tempReference.declared.status == true) {
+                                        // Validate Types
+                                        if (reference.type == tempReference.type) {
+                                            // Push New Init Attribute for ID + EmitEntry 
+                                            reference.initalized.push({line: id.data.line, col: id.data.col});
+                                            this.emitEntry("INIT", id.name, {type: reference.type, 
+                                                line: id.data.line,
+                                                col: id.data.col});
 
-                                                // Push New Used Attribute for ID + EmitEntry 
-                                                tempReference.used.push({line: expr.data.line, col: expr.data.col});
-                                                this.emitEntry("USED", expr.name, {action: "Assignment", line: expr.data.line, col: expr.data.col});
-                                            } else {
-                                                // EmitError for Type Mismatch
-                                                this.emitError("ASSIGNMENT", id.name, {type: reference.type, line: id.data.line, col: id.data.col});
-                                            }
+                                            // Push New Used Attribute for ID + EmitEntry 
+                                            tempReference.used.push({line: expr.data.line, col: expr.data.col});
+                                            this.emitEntry("USED", expr.name, {action: "Assignment", line: expr.data.line, col: expr.data.col});
                                         } else {
-                                            // EmitError for Unintialized 
-                                            this.emitError("UNDECLARED", expr.name, {line: expr.data.line, col: expr.data.col});
+                                            // EmitError for Type Mismatch
+                                            this.emitError("ASSIGNMENT", id.name, {type: reference.type, line: id.data.line, col: id.data.col});
                                         }
                                     } else {
-                                       // EmitError for Unintialized 
-                                       this.emitError("UNDECLARED", expr.name, {line: expr.data.line, col: expr.data.col}); 
+                                        // EmitError for Unintialized 
+                                        this.emitError("UNDECLARED", expr.name, {line: expr.data.line, col: expr.data.col});
                                     }
                                 } else {
-                                    // Validate Types
-                                    if (reference.type != exprType) {
-                                        // EmitError for Type Mismatch
-                                        this.emitError("ASSIGNMENT", id.name, {type: reference.type, line: id.data.line, col: id.data.col});
-                                    } else {
-                                        // Push New Init Attribute for ID + EmitEntry 
-                                        reference.initalized.push({line: id.data.line, col: id.data.col});
-                                        this.emitEntry("INIT", id.name, {type: reference.type, 
-                                            line: id.data.line,
-                                            col: id.data.col});
-                                    }
+                                    // EmitError for Unintialized 
+                                    this.emitError("UNDECLARED", expr.name, {line: expr.data.line, col: expr.data.col}); 
                                 }
                             } else {
-                                if ((expr.name == "==" || expr.name == "!=") && "boolean" == reference.type) {
-                                    // Push New Init Attribute for ID + EmitEntry 
-                                    reference.initalized.push({line: id.data.line, col: id.data.col});
-                                    this.emitEntry("INIT", id.name, {type: reference.type, 
-                                        line: id.data.line,
-                                        col: id.data.col});   
-                                } else if (this.getType(expr.children[0]) == reference.type) {
+                                // Validate Types
+                                if (reference.type != exprType) {
+                                    // EmitError for Type Mismatch
+                                    this.emitError("ASSIGNMENT", id.name, {type: reference.type, line: id.data.line, col: id.data.col});
+                                } else {
                                     // Push New Init Attribute for ID + EmitEntry 
                                     reference.initalized.push({line: id.data.line, col: id.data.col});
                                     this.emitEntry("INIT", id.name, {type: reference.type, 
                                         line: id.data.line,
                                         col: id.data.col});
+                                }
+                            }
+                        } else {
+                            if (this.getType(expr.children[0]) == reference.type) {
+                                // Push New Init Attribute for ID + EmitEntry 
+                                reference.initalized.push({line: id.data.line, col: id.data.col});
+                                this.emitEntry("INIT", id.name, {type: reference.type, 
+                                    line: id.data.line,
+                                    col: id.data.col});
+                            } else {
+                                if (expr.name == "!=" || expr.name == "==") {
+                                    if (reference.type == "boolean") {
+                                        // Push New Init Attribute for ID + EmitEntry 
+                                        reference.initalized.push({line: id.data.line, col: id.data.col});
+                                        this.emitEntry("INIT", id.name, {type: reference.type, 
+                                            line: id.data.line,
+                                            col: id.data.col});    
+                                    } else {
+                                        // EmitError for Invalid Type Assignment
+                                        this.emitError("ASSIGNMENT", id.name, {type: reference.type, 
+                                            line: id.data.line, col: id.data.col});
+                                    }
                                 } else {
                                     // EmitError for Invalid Type Assignment
                                     this.emitError("ASSIGNMENT", id.name, {type: reference.type, 
                                         line: id.data.line, col: id.data.col});
-                                }              
-                            } 
-                        } else {
-                            // EmitError for Undeclared ID
-                            this.emitError("UNDECLARED", id.name, {line: id.data.line, col: id.data.col})
-                        }
+                                }
+                            }              
+                        } 
                         
                     } else {
                         // EmitError for Undeclared ID
@@ -368,21 +364,14 @@ module CSCompiler {
                         var reference = this.getReference(node.children[0]);
 
                         if (reference != -1) {
-                            // Verify Decleration of ID
-                            if (reference.declared.status == true) {
-                                if (reference.initalized.length) {
-                                    // Update Used Attribute + EmitEntry
-                                    reference.used.push({line: node.children[0].data.line, col: node.children[0].data.col});
-                                    this.emitEntry("USED", node.children[0].name, {action: "Print", line: node.children[0].data.line, col: node.children[0].data.col});
-                                } else {
-                                    // EmitError for Unintalized Use of ID
-                                    this.emitWarning("UNINITALIZED", node.children[0].name, {line: node.children[0].data.line, col: node.children[0].data.col});
-                                }
-                                
+                            if (reference.initalized.length) {
+                                // Update Used Attribute + EmitEntry
+                                reference.used.push({line: node.children[0].data.line, col: node.children[0].data.col});
+                                this.emitEntry("USED", node.children[0].name, {action: "Print", line: node.children[0].data.line, col: node.children[0].data.col});
                             } else {
-                                // EmitError for Use of Undeclared ID
-                                this.emitError("UNDECLARED", node.children[0].name, {line: node.children[0].data.line, col: node.children[0].data.col});
-                            }               
+                                // EmitError for Unintalized Use of ID
+                                this.emitWarning("UNINITALIZED", node.children[0].name, {line: node.children[0].data.line, col: node.children[0].data.col});
+                            }
                         } else {
                             // EmitError for Use of Undeclared ID
                             this.emitError("UNDECLARED", node.children[0].name, {line: node.children[0].data.line, col: node.children[0].data.col});
@@ -478,18 +467,17 @@ module CSCompiler {
          *   String, Digit, and ID
          */
         public getType(node) {
-            if (!isNaN(node.name)) {
-                return "int"; 
+
+            if (node.name == "true" || node.name == "false") {
+                return "boolean";
+            } else if (node.name.indexOf("\"") > -1) {
+                return "string";
+            } else if (!isNaN(node.name)) {
+                return "int"
+            } else if (node.name.length == 1 && node.name != "+") {
+                return "id"
             } else {
-                if (node.name.indexOf('"') > -1) {
-                    return "string";
-                } else if (node.name.length == 1 && node.name != '+') {
-                    return "id";    
-                } else if (node.name == "true" || node.name == "false" || node.parent.name == "!=" || node.parent.name == "==") {
-                    return "boolean"; 
-                } else {
-                    return -1; 
-                }
+                return -1;
             }
         }
 

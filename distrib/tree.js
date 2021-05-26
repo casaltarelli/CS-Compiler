@@ -84,15 +84,9 @@ var CSCompiler;
          *   node's parent.
          */
         Tree.prototype.ascendTree = function () {
-            // Validate our Current Node isn't Root
-            if (this.current.name != this.root.name) {
-                // Check if Parent Exists on Current Node
-                if (this.current.parent) {
-                    this.current = this.current.parent;
-                }
-            }
-            else {
-                console.log("Attempt to ascend when on Root Node");
+            // Check if Parent Exists on Current Node
+            if (this.current.parent) {
+                this.current = this.current.parent;
             }
         };
         /**
@@ -149,20 +143,22 @@ var CSCompiler;
             // Initalize Data for Symbol Table(s)
             var data = "";
             function collect(node) {
-                // Create Symbol Table Header
-                data += "\n|----------    " + padEnd(node.scope.toString(), 3, " ") + "  ----------|\n";
-                data += "|-----------------------------|\n";
-                data += "| " + padEnd("key", 5, " ") + "| "
-                    + padEnd("type", 8, " ") + "| "
-                    + padEnd("line", 5, " ") + "| "
-                    + padEnd("col", 4, " ") + "|\n";
-                data += node.table.toString()
-                    + "|-----------------------------|\n";
-                if (node.children.length) {
+                // Validate Keys in Current Symbol Table
+                if (node.table.keys.length != 0) {
+                    // Create Symbol Table Header
+                    data += "\n|----------    " + padEnd(node.scope.toString(), 3, " ") + "  ----------|\n";
+                    data += "|-----------------------------|\n";
+                    data += "| " + padEnd("key", 5, " ") + "| "
+                        + padEnd("type", 8, " ") + "| "
+                        + padEnd("line", 5, " ") + "| "
+                        + padEnd("col", 4, " ") + "|\n";
+                    data += node.table.toString()
+                        + "|-----------------------------|\n";
+                }
+                // Check for Children Tables
+                if (node.children.length != 0) {
                     for (var c in node.children) {
-                        if (node.children[c].table.keys.length) {
-                            collect(node.children[c]);
-                        }
+                        collect(node.children[c]);
                     }
                 }
             }
