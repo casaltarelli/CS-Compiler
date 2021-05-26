@@ -48,33 +48,53 @@ module CSCompiler {
         }
 
         /**
-         * emitAction(type, value, data?) 
-         * - EmitAction is used to format our 
-         *   messages for Log Output
+         * generate(node)
+         * - Generate is the primary driver for
+         *   developing our Executable Image. Done 
+         *   through a Preorder Traversal of our
+         *   AST. 
          */
-        public emitAction(type, value, data?) {
-            var data;
+        public generate(node) {
+            
+            if (this.generating) {  // [General Case]
 
-            switch(type) {
-                case "Production":
-                    data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
-                    break;
 
-                case "Entry":
-                    data = "Generating " + value;
-                    break;
 
-                default: 
-                    break;
+            } else {                // [Base Case]
+
             }
 
-            // Output Symbol Table Entry to User
-            _Log.output({level: "DEBUG", data: data});
+        }
+
+        /**
+         * appendStack(id, scope)
+         * - AppendStack handles creating new
+         *   static entries into our StaticData.
+         *   Also can recognize duplicate entries in
+         *   which the correct pointer will be returned.
+         */
+        public appendStack(id, scope) {
+            // Validate Identifer Doesn't Exist
+            var pointer = this.getEntry(id, this.staticData, scope)
+
+            if (pointer == "") {
+                // Generate Temporary Address + Static Data Object
+                var temp = "T" + this.staticData.length;
+                var entry = {pointer: temp, value: id, scope: scope};
+
+                // Push to staticData
+                this.staticData.push(entry);
+
+                return entry.pointer.substr(0, 2);
+                
+            } else {
+                return pointer;
+            }
         }
 
         /**
          * appendHeap(s) : String
-         * - AppendHeap is used to add new 
+         * - AppendHeap handles creating new 
          *   dynamic/reference variables to our Heap.
          *   Also can recognize duplicate entries in
          *   which the correct pointer will be returned. 
@@ -85,7 +105,7 @@ module CSCompiler {
                 s = s.substring(1, s.length - 1);
             }
 
-            // Validate String doesn't already exist in Heap
+            // Validate Entry Doesn't Exist
             var pointer = this.getEntry(s, this.heapData);
 
             if (pointer == "") {
@@ -117,24 +137,55 @@ module CSCompiler {
         }
 
         /**
-         * getEntry(name, list)
+         * getEntry(name, list, scope?)
          * - GetEntry is used to determine if an entry in 
-         *   the given list exists. If so, returns the static
-         *   pointer or empty pointer to signify no entry.
+         *   the given list exists. If so, returns the Static
+         *   Pointer or Empty Pointer to signify no entry.
          */
-        public getEntry(value, list) {
+        public getEntry(value, list, scope?) {
             var pointer = "";
 
             // Seek Value in List
             if (list.length > 0) {
                 for (var entry in list) {
-                    if (list[entry].value == value) {
-                        pointer = list[entry].pointer;
+                    if (scope) {
+                        if (list[entry].value == value && list[entry].scope == scope) {
+                            pointer = list[entry].pointer;
+                        }
+                    } else {
+                        if (list[entry].value == value) {
+                            pointer = list[entry].pointer;
+                        }
                     }
                 }
             }
 
             return pointer; 
+        }
+
+        /**
+         * emitAction(type, value, data?) 
+         * - EmitAction is used to format our 
+         *   messages for Log Output
+         */
+         public emitAction(type, value, data?) {
+            var data;
+
+            switch(type) {
+                case "Production":
+                    data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
+                    break;
+
+                case "Entry":
+                    data = "Generating " + value;
+                    break;
+
+                default: 
+                    break;
+            }
+
+            // Output Symbol Table Entry to User
+            _Log.output({level: "DEBUG", data: data});
         }
 
         /**
