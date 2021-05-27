@@ -9,6 +9,7 @@
         export class Logger {
             
             constructor(public log = <HTMLTextAreaElement>document.getElementById("log-output"),
+                        public code = <HTMLTextAreaElement>document.getElementById("code-output"),
                         public mode = "verbose") {}
 
             public init(): void {
@@ -46,14 +47,15 @@
             }
 
             /**
-             * output(msg)
+             * output(msg, flag?)
              * - Output handles writing to our Log within our UI,
              *   it expects a msg Object which allows for us to 
-             *   properly format data to our User.
+             *   properly format data to our User. Flag is used
+             *   to signifiy population of our Code Output 
              */
-            public output(msg): void {
+            public output(msg, flag?): void {
                 // Validate Verbose Mode
-                if (!_Verbose && msg.level != "INFO") {
+                if (!_Verbose && (msg.level != "INFO" || msg.level != "")) {
                     return; 
                 }
 
@@ -79,6 +81,8 @@
                                             + " col: " + msg.data.loc.col + "\n";
                         } else if (_Stage == "Semantic Analysis") {
                             this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
+                        } else if (_Stage == "Code Generation") {
+                            this.log.value += "DEBUG - " + _Stage + " - " + msg.data + "\n";
                         }
                         
                         break;
@@ -92,7 +96,11 @@
                         break;
 
                     default: 
-                        this.log.value += msg.data + "\n";
+                        if (flag) {
+                            this.code.value += msg.data + "\n\n";
+                        } else {
+                            this.log.value += msg.data + "\n";
+                        }
                         break;
                 }
 
@@ -107,6 +115,7 @@
              */
             public reset(): void {
                 this.log.value = "";
+                this.code.value = "";
             }
         }
     }

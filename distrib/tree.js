@@ -90,6 +90,58 @@ var CSCompiler;
             }
         };
         /**
+         * descendTable(table)
+         * - Used to perform a DFS of our
+         *   SymbolTables in aiding to find
+         *   Used instance.
+         */
+        Tree.prototype.descendTable = function (table) {
+            if (table.children.length > 0) {
+                return table.children[0];
+            }
+            else {
+                // Get Parent Reference
+                var parent = table.parent;
+                // Find Sibling -- If any
+                var currentScope = table.scope;
+                // Filter Children on Scope -- Get Next Child (Sibling)
+                var sibling = parent.children.map(function (child) { return child.scope; }).indexOf(currentScope);
+                if (sibling + 1 < parent.children.length) {
+                    return parent.children[sibling + 1];
+                }
+                else {
+                    return -1; // Not Found -- Should Never Happen Hopefully
+                }
+            }
+        };
+        Tree.prototype.seekTableEntry = function (t, key, scope, type) {
+            // Get Table Reference -- Start at Root 
+            var reference = t.table.get(key);
+            if (reference != -1) {
+                switch (type) {
+                    case "Used":
+                        // Check for Used Instance at Scope
+                        for (var entry in reference.used) {
+                            if (reference.used[entry].scope == scope) {
+                                return reference.declared.scope;
+                            }
+                        }
+                    case "Used-Type":
+                        // Check for Used Instance at Scope
+                        for (var entry in reference.used) {
+                            if (reference.used[entry].scope == scope) {
+                                return reference.type;
+                            }
+                        }
+                }
+            }
+            else {
+                // Descend Table to next Child or Sibling
+                return this.seekTableEntry(this.descendTable(t), key, scope, type);
+            }
+            return -1;
+        };
+        /**
          * ascendTable()
          * - Extension of ascendTree used for our Symbol
          *   Table definition.

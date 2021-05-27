@@ -29,7 +29,7 @@ var CSCompiler;
             this.count = count;
         }
         SemanticAnalyzer.prototype.init = function (cst) {
-            // Announce Parser
+            // Announce Semantic Analysis
             _Log.output({ level: "INFO", data: "Starting Semantic Analysis..." });
             // Default Attributes
             this.cst = cst;
@@ -52,7 +52,6 @@ var CSCompiler;
         SemanticAnalyzer.prototype.build = function (node) {
             var essentialFlag = false;
             var operationFlag = false;
-            console.log("Current Node: " + node.name);
             if (this.analyzing == true) {
                 // Update Visited Flag on Node 
                 node.visited = true;
@@ -225,14 +224,9 @@ var CSCompiler;
          *   Boolean flag symbolizing success or fail.
          */
         SemanticAnalyzer.prototype.analyze = function (node) {
-            console.log("Current Node: " + node.name);
-            for (var c in node.children) {
-                console.log("Child Node: " + node.children[c].name);
-            }
             // Update our Symbol Table based on Node
             switch (node.name) {
                 case "VarDecl":
-                    console.log("Entering VarDecl");
                     // Get Type + Identifier
                     var type = node.children[0];
                     var id = node.children[1];
@@ -243,7 +237,7 @@ var CSCompiler;
                         var reference = this.symbolTable.current.table.get(id.name);
                         // Update Type + Declared Attribute
                         reference.type = type.name;
-                        reference.declared = { status: true, line: type.data.line, col: type.data.col };
+                        reference.declared = { status: true, line: type.data.line, col: type.data.col, scope: this.symbolTable.current.scope };
                         // Announce Symbol Table Entry
                         this.emitEntry("DECL", id.name, { type: type.name, line: type.data.line, col: type.data.col });
                     }
@@ -253,7 +247,6 @@ var CSCompiler;
                     }
                     break;
                 case "AssignmentStatement":
-                    console.log("Entering AssignStatement");
                     // Get ID + Expr
                     var id = node.children[0];
                     var expr = node.children[1];
@@ -278,7 +271,7 @@ var CSCompiler;
                                                 line: id.data.line,
                                                 col: id.data.col });
                                             // Push New Used Attribute for ID + EmitEntry 
-                                            tempReference.used.push({ line: expr.data.line, col: expr.data.col });
+                                            tempReference.used.push({ line: expr.data.line, col: expr.data.col, scope: this.symbolTable.current.scope });
                                             this.emitEntry("USED", expr.name, { action: "Assignment", line: expr.data.line, col: expr.data.col });
                                         }
                                         else {
@@ -355,7 +348,7 @@ var CSCompiler;
                         if (reference != -1) {
                             if (reference.initalized.length) {
                                 // Update Used Attribute + EmitEntry
-                                reference.used.push({ line: node.children[0].data.line, col: node.children[0].data.col });
+                                reference.used.push({ line: node.children[0].data.line, col: node.children[0].data.col, scope: this.symbolTable.current.scope });
                                 this.emitEntry("USED", node.children[0].name, { action: "Print", line: node.children[0].data.line, col: node.children[0].data.col });
                             }
                             else {
@@ -372,7 +365,6 @@ var CSCompiler;
                 case "==":
                 case "!=": // Utilize Waterfall for Operators
                 case "+":
-                    console.log("Entering Operator");
                     // Get Exprs
                     var exprs = [node.children[0], node.children[1]];
                     var types = [];
@@ -380,10 +372,8 @@ var CSCompiler;
                     for (var e in exprs) {
                         // Check if Expr is Inner-Operator instance
                         if (!(exprs[e].children.length)) {
-                            console.log("Recognized No Children for Child Node: " + exprs[e].name);
                             // Get Type
                             var tempType = this.getType(exprs[e]);
-                            console.log("Type Returned for Child: " + tempType);
                             if (tempType == "id") {
                                 // Get ID Reference
                                 var reference = this.getReference(exprs[e]);
@@ -394,7 +384,7 @@ var CSCompiler;
                                         // Add ID type to Types
                                         types.push(reference.type);
                                         // Update Used Attribute for ID + EmitEntry
-                                        reference.used.push({ line: exprs[e].data.line, col: exprs[e].data.col });
+                                        reference.used.push({ line: exprs[e].data.line, col: exprs[e].data.col, scope: this.symbolTable.current.scope });
                                         this.emitEntry("USED", exprs[e].name, { action: "Operation", line: exprs[e].data.line, col: exprs[e].data.col });
                                     }
                                     else {
@@ -428,7 +418,7 @@ var CSCompiler;
                                 var tempReference = this.getReference(exprs[e].children[0].name);
                                 if (tempReference != -1) {
                                     // Update Used Attribute for Type + Push Type to Types
-                                    tempReference.used.push({ line: exprs[e].data.line, col: exprs[e].data.col });
+                                    tempReference.used.push({ line: exprs[e].data.line, col: exprs[e].data.col, scope: this.symbolTable.current.scope });
                                     this.emitEntry("USED", tempReference.name, { action: "Operation", line: exprs[e].data.line, col: exprs[e].data.col });
                                 }
                                 else {
@@ -494,6 +484,11 @@ var CSCompiler;
             }
             return reference;
         };
+        /**
+         * emitEntry(type, name, info)
+         * - EmitEntry handles generating our
+         *   Log Output througout our analysis phase.
+         */
         SemanticAnalyzer.prototype.emitEntry = function (type, name, info) {
             var data;
             switch (type) {
@@ -526,7 +521,6 @@ var CSCompiler;
                     break;
                 case "UNUSED-DEC":
                     data = "Variable Declared but never used [ " + name + " ] on line: " + info.line + " col: " + info.col;
-                    console.log("Hit on Usused!");
                     break;
                 case "UNUSED-INIT":
                     data = "Variable Initalized but never used [ " + name + " ] on line: " + info.line + " col: " + info.col;
@@ -579,7 +573,6 @@ var CSCompiler;
         SemanticAnalyzer.prototype.scan = function (node) {
             // Get Table Reference for Node
             var table = node.table;
-            console.log("Scanning Symbol Table for Scope: " + node.scope);
             for (var i = 0; i < table.keys.length; i++) {
                 // Get Direct Reference to Table Entry Values
                 var entry = table.values[i];

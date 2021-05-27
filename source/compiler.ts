@@ -30,6 +30,7 @@ module CSCompiler {
             _Lexer = new Lexer();
             _Parser = new Parser();
             _SemanticAnalyzer = new SemanticAnalyzer();
+            _CodeGeneration = new CodeGeneration();
 
             // Validate Input from User
             if (source) {
@@ -127,6 +128,33 @@ module CSCompiler {
                                     _Log.output({level: "", data: "Symbol Table generated for program " + _PID });
                                     _Log.output({level: "", data: _SemanticAnalyzer.symbolTable.toStringTable()});
                                 }
+                                break;
+
+                            case "Code Generation":
+                                // Init Code Generation for Executable Image
+                                _CodeGeneration.init(_SemanticAnalyzer.ast, _SemanticAnalyzer.symbolTable)
+                                _CodeGeneration.generate(_CodeGeneration.ast.root)
+
+                                // Backpatch Executable Image
+                                _CodeGeneration.backpatch();
+
+                                // Announce Completion
+                                _Log.output({level: "INFO", data: "Code Generation Complete. " + _CodeGeneration.errors + " ERROR(S)\n"});
+
+                                // Validate Successful Code Generation -- Output Executable Image
+                                if (_CodeGeneration.errors > 0) {
+                                    _Log.output({level: "", data: "--------------------"});
+                                    _Log.output({level: "INFO", data: "Compliation Stopped due to Code Generation error(s)..."});
+                                    break out;
+                                } else {
+                                    // Add Validated Executable Image to Global Reference
+                                    _Images.push(_CodeGeneration.image);
+
+                                    // Output Executable Image to Log
+                                    _Log.output({level: "", data: "--------------------"});
+                                    _Log.output({level: "", data: _CodeGeneration.image.join(" ")}, true);
+                                }
+
                                 break;
 
                             default:
