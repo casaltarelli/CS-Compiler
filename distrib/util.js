@@ -19,7 +19,7 @@ var closeModal = function () {
 // Test Categories Functionality
 var show = function (category) {
     console.log("Param Given: " + category);
-    var categories = ["LEX", "PAR", "SMA"];
+    var categories = ["LEX", "PAR", "SMA", "CGN"];
     for (var i = 0; i < categories.length; i++) {
         var id = categories[i] + "-cases";
         console.log(id);

@@ -3,8 +3,8 @@
 
     Code Generation is used to develop our Executable Image using 6502a Assembly Op Codes. Based on our Intermediate 
     Representation (AST) that was developed in Semantic Analysis and our Symbol Table(s). We will be able to execute 
-    a pre-order traversal of our AST to generate our Machine Code based on our Basic Blocks. One Code Generation is 
-    completed, we will then execute Stack Allocation and Backpatching to replace all temporary Addresses and Jumps.
+    a pre-order traversal of our AST to generate our Machine Code based on our Basic Blocks. Once Code Generation is 
+    completed, we will then execute Backpatching to replace all temporary Addresses and Jumps.
 
 ----- */
 
@@ -70,9 +70,9 @@ module CSCompiler {
                 // Check if Current Node is Block
                 if (node.name == "Block") {
                     // Increment Scope for New Block
-                    this.scope = this.scope + 1;
+                    this.scope++;
 
-                    // Recursivley Call Children
+                    // Recursivley Call Children - Kickoff
                     if (node.children.length) {
                         for (var c in node.children) {
                             this.generate(node.children[c]);
@@ -119,12 +119,16 @@ module CSCompiler {
                     } 
                 }
 
-                // On Block Exit -- Check if Distance can be Calculated for Active Jumps
+                // On Block Exit -- Check if Distance can be Calculated for Active Jumps + Decrement Scope
                 if (node.name == "Block") {
+                    this.scope--; 
                     if (this.activeJumps.length > 0) {
                         // Check Parent of Current Nose to Determine Calculation
                         if (node.parent.name == "WhileStatement") {
+                            // Start Jump Distance
                             this.appendJump(this.activeJumps[1].pointer, padHex((((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase())));
+
+                            // Branch Jump Distance
                             this.appendJump(this.activeJumps[0].pointer, padHex((this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase())));
 
                             // Remove Jumps from Active List
@@ -212,12 +216,11 @@ module CSCompiler {
                     value = "0" + node.name;
                 }
             } else if (node.name.indexOf("\"") > -1) {
-                type = "Memory";
+                type = "Constant";
 
                 // Get Dynamic Pointer from Heap
                 value = this.appendHeap(node.name);
             } else {
-                console.log("Recognized ID in GETTYPE");
                 type = "Memory";
 
                 // Get Static Pointer from Static Data
@@ -280,9 +283,7 @@ module CSCompiler {
         public generateComparison(parent, node, address) {
             switch(parent) {
                 case "AssignmentStatement":
-                    console.log("GENCOMPARISON: Recognized Parent AssignStatement");
                     if (node == "==") {
-                        console.log("GENCOMPARISON: Recognized Child ==");
                         this.handleXReg("Compare", "Memory", address);
 
                         this.handleAcc("Load", "Constant", this.boolPointers.false);
@@ -293,7 +294,6 @@ module CSCompiler {
 
                         this.handleAcc("Load", "Constant", this.boolPointers.true);
                     } else if (node == "!=") {
-                        console.log("GENCOMPARISON: Recognized Child !=");
                         this.handleXReg("Compare", "Memory", address);
                         this.handleAcc("Load", "Constant", "00");
 
@@ -478,7 +478,6 @@ module CSCompiler {
                     break;
                 
                 case "Load-print":
-                    console.log("HANDLEYREG: Recognized Load Print!");
                     if (type == "Memory") {
                         this.appendText("AC");
                         this.appendText(value);
@@ -490,8 +489,14 @@ module CSCompiler {
                         this.appendText("A0");
                         this.appendText(value);
 
-                        // Load X Reg w/ 01
-                        this.handleXReg("Load", "Constant", "01");
+                        // Check for Pointer or Constant
+                        if (isNaN(value)) {
+                            // Load X Reg w/ 02
+                            this.handleXReg("Load", "Constant", "02");   
+                        } else {
+                            // Load X Reg w/ 01
+                            this.handleXReg("Load", "Constant", "01");
+                        }
                     }
                     break;
 
@@ -566,9 +571,8 @@ module CSCompiler {
          *   which the correct pointer will be returned.
          */
         public appendStack(id, scope) {
-            console.log("NEW TEMP REQUEST: id: " + id + " at scope " + scope);
             // Validate Identifer Doesn't Exist
-            var pointer = this.getEntry(id, this.staticData, scope)
+            var pointer = this.getEntry(id, this.staticData, "Stack", scope);
 
             if (pointer == "") {
                 // Generate Temporary Address + Static Data Object
@@ -595,7 +599,7 @@ module CSCompiler {
          */
         public appendJump(id, dist?) {
             // Check if Entry Exists
-            var value = this.getEntry(id, this.jumpData);
+            var value = this.getEntry(id, this.jumpData, "Jump");
 
             if (value == "") {
                 // Generate New Jump Object
@@ -637,7 +641,7 @@ module CSCompiler {
             }
 
             // Validate Entry Doesn't Exist
-            var pointer = this.getEntry(s, this.heapData);
+            var pointer = this.getEntry(s, this.heapData, "Heap");
 
             if (pointer == "") {
                 // Create Heap Data Object
@@ -672,23 +676,46 @@ module CSCompiler {
          *   the given list exists. If so, returns the Static
          *   Pointer or Empty Pointer to signify no entry.
          */
-        public getEntry(value, list, scope?) {
+        public getEntry(value, list, type, scope?) {
             var pointer = "";
 
+            // Check to Correct Scope to Decleration Scope
+            if (type == "Stack") {
+                var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope);
+
+                if (decScope != -1) {
+                    scope = decScope;
+                }
+            }
+            
             // Seek Value in List given
             out:
             if (list.length > 0) {
                 for (var entry in list) {
-                    if (scope != null) {    // [ Static Data ]
-                        if (list[entry].value == value && list[entry].scope == scope) {
-                            pointer = list[entry].pointer;
-                            break out;
-                        }
-                    } else {                // [Heap + Jumps]
-                        if (list[entry].pointer == value) {
-                            pointer = list[entry].pointer;
-                            break out;
-                        }
+                    switch(type) {
+                        case "Stack":
+                            if (list[entry].value == value && list[entry].scope == scope) {
+                                pointer = list[entry].pointer;
+                                break out;
+                            }
+                            break;
+
+                        case "Jump":
+                            if (list[entry].pointer == value) {
+                                pointer = list[entry].pointer;
+                                break out;
+                            }
+                            break;
+
+                        case "Heap":
+                            if (list[entry].value == value) {
+                                pointer = list[entry].pointer
+                            }
+                            break;
+
+                        default:
+                            console.log("Unrecognized Type given");
+                            break;
                     }
                 }
             }
@@ -713,7 +740,7 @@ module CSCompiler {
             } else {
                 // Populate Addresses
                 for (var i = 0; i < this.staticData.length; i++) {
-                    var address = padHex(staticIndex.toString(16).toLocaleUpperCase()); 
+                    var address = staticIndex.toString(16).toLocaleUpperCase(); 
 
                     // Update Location Attribute + Increment StaticIndex
                     this.staticData[i].location = address;
@@ -780,30 +807,38 @@ module CSCompiler {
             }
         }
 
+        /**
+         * emitError(type, data?)
+         * - EmitError handles the creation of our Error Entry and
+         *   generating our message object for Log Output. 
+         */
         public emitError(type, data?) {
             var data;
-            switch(type) {
-                case "Unsupported":
-                    data = "Nested Boolean Expressions are currently unsupported";
-                    break;
 
-                case "Collision":
-                    data = "Collison between [ " + data.first + " ] and [ " + data.second + " ] generation terminated";
-                    break;
+            if (this.generating) {
+                switch(type) {
+                    case "Unsupported":
+                        data = "Nested Boolean Expressions are currently unsupported";
+                        break;
+    
+                    case "Collision":
+                        data = "Collison between [ " + data.first + " ] and [ " + data.second + " ] generation terminated";
+                        break;
+                }
+    
+                // Update Errors Counter + Output to User
+                this.errors++;
+                _Log.output({level: "ERROR", data: data});
+    
+                // Flip Generating Flag 
+                this.generating = false;
             }
-
-            // Update Errors Counter + Output to User
-            this.errors++;
-            _Log.output({level: "ERROR", data: data});
-
-            // Update Generating Flag to False
-            this.generating = false;
         }
 
         /**
          * initImage
          * - InitImage is used to initialize all bytes in
-         *   our Executable Image to 00.
+         *   our Executable Image.
          */
         public initImage() {
             for (var i = 0; i < 256; i++) {

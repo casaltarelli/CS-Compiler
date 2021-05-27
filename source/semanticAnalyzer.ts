@@ -256,7 +256,7 @@ module CSCompiler {
 
                         // Update Type + Declared Attribute
                         reference.type = type.name;
-                        reference.declared = {status: true, line: type.data.line, col: type.data.col};
+                        reference.declared = {status: true, line: type.data.line, col: type.data.col, scope: this.symbolTable.current.scope};
 
                         // Announce Symbol Table Entry
                         this.emitEntry("DECL", id.name, {type: type.name, line: type.data.line, col: type.data.col});
@@ -296,7 +296,7 @@ module CSCompiler {
                                                 col: id.data.col});
 
                                             // Push New Used Attribute for ID + EmitEntry 
-                                            tempReference.used.push({line: expr.data.line, col: expr.data.col});
+                                            tempReference.used.push({line: expr.data.line, col: expr.data.col, scope: this.symbolTable.current.scope});
                                             this.emitEntry("USED", expr.name, {action: "Assignment", line: expr.data.line, col: expr.data.col});
                                         } else {
                                             // EmitError for Type Mismatch
@@ -366,7 +366,7 @@ module CSCompiler {
                         if (reference != -1) {
                             if (reference.initalized.length) {
                                 // Update Used Attribute + EmitEntry
-                                reference.used.push({line: node.children[0].data.line, col: node.children[0].data.col});
+                                reference.used.push({line: node.children[0].data.line, col: node.children[0].data.col, scope: this.symbolTable.current.scope});
                                 this.emitEntry("USED", node.children[0].name, {action: "Print", line: node.children[0].data.line, col: node.children[0].data.col});
                             } else {
                                 // EmitError for Unintalized Use of ID
@@ -405,7 +405,7 @@ module CSCompiler {
                                         types.push(reference.type);
 
                                         // Update Used Attribute for ID + EmitEntry
-                                        reference.used.push({line: exprs[e].data.line, col: exprs[e].data.col});
+                                        reference.used.push({line: exprs[e].data.line, col: exprs[e].data.col, scope: this.symbolTable.current.scope});
                                         this.emitEntry("USED", exprs[e].name, {action: "Operation", line: exprs[e].data.line, col: exprs[e].data.col});
                                     } else {
                                         // EmitError for Undeclared ID
@@ -435,7 +435,7 @@ module CSCompiler {
 
                                 if (tempReference != -1) {
                                     // Update Used Attribute for Type + Push Type to Types
-                                    tempReference.used.push({line: exprs[e].data.line, col: exprs[e].data.col});
+                                    tempReference.used.push({line: exprs[e].data.line, col: exprs[e].data.col, scope: this.symbolTable.current.scope});
                                     this.emitEntry("USED", tempReference.name, {action: "Operation", line: exprs[e].data.line, col: exprs[e].data.col});
                                 } else {
                                     // EmitError for Undeclared ID

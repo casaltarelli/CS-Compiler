@@ -132,7 +132,7 @@ module CSCompiler {
 
                             case "Code Generation":
                                 // Init Code Generation for Executable Image
-                                _CodeGeneration.init(_SemanticAnalyzer.ast, _SemanticAnalyzer.symbolTable.root)
+                                _CodeGeneration.init(_SemanticAnalyzer.ast, _SemanticAnalyzer.symbolTable)
                                 _CodeGeneration.generate(_CodeGeneration.ast.root)
 
                                 // Backpatch Executable Image

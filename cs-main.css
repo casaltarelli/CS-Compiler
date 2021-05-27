@@ -365,6 +365,10 @@ body {
     display: none;
 }
 
+#CGN-cases {
+    display: none;
+}
+
 .test-list {
     margin-left: 0 !important;
 }
