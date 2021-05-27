@@ -38,6 +38,4 @@ var _Blocks = [
                     _CodeGeneration.appendText(_CodeGeneration.appendJump(_CodeGeneration.jumpData.length)); 
                     
                 }}}
-    
-
 ]

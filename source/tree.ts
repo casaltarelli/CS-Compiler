@@ -143,7 +143,6 @@ module CSCompiler {
                 // Descend Table to next Child or Sibling
                 return this.seekTableEntry(this.descendTable(t), key, scope, type);
             }
-
             return -1;
         }
 

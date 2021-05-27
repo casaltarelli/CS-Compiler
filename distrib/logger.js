@@ -23,8 +23,6 @@ var CSCompiler;
          * - Input handles reading all data for a respective
          *   compililation request. Breaksdown Source Data for
          *   each seperate program contained in our Input Field.
-         *
-         * (Not sure if this is the right place to handle this.)
          */
         Logger.prototype.input = function () {
             // Get Input Textarea Referenece

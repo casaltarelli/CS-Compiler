@@ -561,7 +561,7 @@ var CSCompiler;
             var value = this.getEntry(id, this.jumpData, "Jump");
             if (value == "") {
                 // Generate New Jump Object
-                var entry = { pointer: "J" + this.jumpData.length, distance: 0, start: this.textIndex - 1 }; // -1 could fuck up while
+                var entry = { pointer: "J" + this.jumpData.length, distance: 0, start: this.textIndex - 1 };
                 // Check if Distance is already known
                 if (dist) {
                     entry.distance = dist;

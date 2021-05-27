@@ -39,7 +39,6 @@ var show = function(category) {
          document.getElementById(categories[i]).style.borderBottom = "1px solid #F7F6FB";
       }
    }
-
 }
 
 // Verbose Mode Toggle
