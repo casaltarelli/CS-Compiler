@@ -219,6 +219,7 @@ var CSCompiler;
                     value = this.appendHeap(node.name);
                 }
                 else {
+                    console.log("Recognized ID in GETTYPE");
                     type = "Memory";
                     // Get Static Pointer from Static Data
                     value = this.appendStack(node.name, this.scope);
@@ -518,6 +519,7 @@ var CSCompiler;
          *   which the correct pointer will be returned.
          */
         CodeGeneration.prototype.appendStack = function (id, scope) {
+            console.log("NEW TEMP REQUEST: id: " + id + " at scope " + scope);
             // Validate Identifer Doesn't Exist
             var pointer = this.getEntry(id, this.staticData, scope);
             if (pointer == "") {
@@ -541,7 +543,6 @@ var CSCompiler;
          *   a entry.
          */
         CodeGeneration.prototype.appendJump = function (id, dist) {
-            console.log("APPENDJUMP: id given: " + id);
             // Check if Entry Exists
             var value = this.getEntry(id, this.jumpData);
             if (value == "") {
@@ -550,7 +551,6 @@ var CSCompiler;
                 // Check if Distance is already known
                 if (dist) {
                     entry.distance = dist;
-                    console.log("APPENDJUMP: Distance " + entry.distance);
                 }
                 // Push Entry to Jump Data + ActiveJumps
                 this.jumpData.push(entry);
@@ -614,8 +614,10 @@ var CSCompiler;
             var pointer = "";
             // Seek Value in List
             out: if (list.length > 0) {
+                console.log("Recognized non empty list!");
                 for (var entry in list) {
-                    if (scope) {
+                    if (scope != null) {
+                        console.log("Recognized Scope!");
                         if (list[entry].value == value && list[entry].scope == scope) {
                             pointer = list[entry].pointer;
                             break out;
@@ -695,7 +697,7 @@ var CSCompiler;
                         data = "Backpatched [ " + value + " ] with Static Address [ " + data.address + " ] at index: " + data.index;
                         break;
                     case "Byte-Jump":
-                        data = "Backpatched [ " + value + " ] with Distance [ " + data.address + " ] at index: " + data.index;
+                        data = "Backpatched [ " + value + " ] with Distance [ " + data.distance + " ] at index: " + data.index;
                         break;
                     default:
                         break;

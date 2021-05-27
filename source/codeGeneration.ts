@@ -217,6 +217,7 @@ module CSCompiler {
                 // Get Dynamic Pointer from Heap
                 value = this.appendHeap(node.name);
             } else {
+                console.log("Recognized ID in GETTYPE");
                 type = "Memory";
 
                 // Get Static Pointer from Static Data
@@ -565,6 +566,7 @@ module CSCompiler {
          *   which the correct pointer will be returned.
          */
         public appendStack(id, scope) {
+            console.log("NEW TEMP REQUEST: id: " + id + " at scope " + scope);
             // Validate Identifer Doesn't Exist
             var pointer = this.getEntry(id, this.staticData, scope)
 
@@ -592,7 +594,6 @@ module CSCompiler {
          *   a entry.
          */
         public appendJump(id, dist?) {
-            console.log("APPENDJUMP: id given: " + id);
             // Check if Entry Exists
             var value = this.getEntry(id, this.jumpData);
 
@@ -603,7 +604,6 @@ module CSCompiler {
                 // Check if Distance is already known
                 if (dist) {
                     entry.distance = dist;
-                    console.log("APPENDJUMP: Distance " + entry.distance); 
                 }
 
                 // Push Entry to Jump Data + ActiveJumps
@@ -675,16 +675,16 @@ module CSCompiler {
         public getEntry(value, list, scope?) {
             var pointer = "";
 
-            // Seek Value in List
+            // Seek Value in List given
             out:
             if (list.length > 0) {
                 for (var entry in list) {
-                    if (scope) {
+                    if (scope != null) {    // [ Static Data ]
                         if (list[entry].value == value && list[entry].scope == scope) {
                             pointer = list[entry].pointer;
                             break out;
                         }
-                    } else {
+                    } else {                // [Heap + Jumps]
                         if (list[entry].pointer == value) {
                             pointer = list[entry].pointer;
                             break out;
@@ -768,7 +768,7 @@ module CSCompiler {
                         break;
 
                     case "Byte-Jump":
-                        data = "Backpatched [ " + value + " ] with Distance [ " + data.address + " ] at index: " + data.index;
+                        data = "Backpatched [ " + value + " ] with Distance [ " + data.distance + " ] at index: " + data.index;
                         break
     
                     default: 
