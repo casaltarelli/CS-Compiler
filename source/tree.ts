@@ -118,20 +118,30 @@ module CSCompiler {
             }
         }
 
-        public seekTableEntry(t, key, scope) {
+        public seekTableEntry(t, key, scope, type) {
             // Get Table Reference -- Start at Root 
             var reference = t.table.get(key);
 
             if (reference != -1) {
-                // Check for Used Instance at Scope
-                for (var entry in reference.used) {
-                    if (reference.used[entry].scope == scope) {
-                        return reference.declared.scope;
-                    }
+                switch(type) {
+                    case "Used":
+                        // Check for Used Instance at Scope
+                        for (var entry in reference.used) {
+                            if (reference.used[entry].scope == scope) {
+                                return reference.declared.scope;
+                            }
+                        }
+                    case "Used-Type":
+                        // Check for Used Instance at Scope
+                        for (var entry in reference.used) {
+                            if (reference.used[entry].scope == scope) {
+                                return reference.type;
+                            }
+                        }
                 }
             } else {
                 // Descend Table to next Child or Sibling
-                return this.seekTableEntry(this.descendTable(t), key, scope);
+                return this.seekTableEntry(this.descendTable(t), key, scope, type);
             }
 
             return -1;

@@ -21,7 +21,7 @@ var CSCompiler;
             if (heapData === void 0) { heapData = null; }
             if (scope === void 0) { scope = -1; }
             if (textIndex === void 0) { textIndex = 0; }
-            if (heapIndex === void 0) { heapIndex = 255; }
+            if (heapIndex === void 0) { heapIndex = 256; }
             if (activeJumps === void 0) { activeJumps = []; }
             if (boolPointers === void 0) { boolPointers = { "true": "", "false": "" }; }
             if (whilePointers === void 0) { whilePointers = { start: 0, branch: 0 }; }
@@ -443,8 +443,18 @@ var CSCompiler;
                         this.appendText("AC");
                         this.appendText(value);
                         this.appendText("00");
-                        // Load X Reg w/ 02
-                        this.handleXReg("Load", "Constant", "02");
+                        // Check for Static Variable
+                        if (value.charAt(0) == "T") {
+                            type = this.getTrueType(value);
+                        }
+                        if (type == "Constant") {
+                            // Load X Reg w/ 01
+                            this.handleXReg("Load", "Constant", "01");
+                        }
+                        else {
+                            // Load X Reg w/ 02
+                            this.handleXReg("Load", "Constant", "02");
+                        }
                     }
                     else {
                         this.appendText("A0");
@@ -618,7 +628,7 @@ var CSCompiler;
             var pointer = "";
             // Check to Correct Scope to Decleration Scope
             if (type == "Stack") {
-                var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope);
+                var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope, "Used");
                 if (decScope != -1) {
                     scope = decScope;
                 }
@@ -630,6 +640,12 @@ var CSCompiler;
                         case "Stack":
                             if (list[entry].value == value && list[entry].scope == scope) {
                                 pointer = list[entry].pointer;
+                                break out;
+                            }
+                            break;
+                        case "Stack-Value":
+                            if (list[entry].value == value && list[entry].scope == scope) {
+                                pointer = list[entry].value;
                                 break out;
                             }
                             break;
@@ -747,6 +763,22 @@ var CSCompiler;
                 _Log.output({ level: "ERROR", data: data });
                 // Flip Generating Flag 
                 this.generating = false;
+            }
+        };
+        /**
+         * getTrueType(address)
+         * - Given a Static Address determine
+         *   the values true Data Type
+         */
+        CodeGeneration.prototype.getTrueType = function (address) {
+            // Get True Value of Temp Address
+            var trueValue = this.staticData.filter(function (t) { return t.pointer == address; })[0].value;
+            var type = this.symbolTable.seekTableEntry(this.symbolTable.root, trueValue, this.scope, "Used-Type");
+            if (type == "int") {
+                return "Constant";
+            }
+            else {
+                return "Memory";
             }
         };
         /**

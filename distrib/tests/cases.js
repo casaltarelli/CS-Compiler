@@ -50,7 +50,8 @@ var _SetTest = function (index, name) {
         '{\n    int a\n    a = 2\n\n    a = 2 + c\n\n}$',
         '{\n    int a\n    a = 5\n\n    string b\n    b = "cscompiler"\n\n    boolean a\n    }$',
         '{\n    string a\n    int b\n\n    a = "hello"\n    b = 3\n\n if (a == 3) {\n        int b\n'
-            + '        b = 2\n    }\n}$'
+            + '        b = 2\n    }\n}$',
+        '{\n   int a\n   a = 2\n   if ("a" == "a") {\n      print(a)\n   }\n\n}$'
     ];
     // Populate Editor + Output to Log
     this.document.getElementById("user-input").value = cases[index];

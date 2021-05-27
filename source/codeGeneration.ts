@@ -20,7 +20,7 @@ module CSCompiler {
                     public heapData = null,
                     public scope = -1,
                     public textIndex = 0,
-                    public heapIndex = 255,
+                    public heapIndex = 256,
                     public activeJumps = [],
                     public boolPointers = {true: "", false: ""},
                     public whilePointers = {start: 0, branch: 0},
@@ -189,43 +189,43 @@ module CSCompiler {
          *   (Constant or Memory Pointer).
          */
         public getType(node) {
-        var type = "";
-        var value = "";
+            var type = "";
+            var value = "";
 
-        // Validate Not Null [Default Value Case]
-        if (node != null) {
-            // Update Visited Flag on Child Node
-            node.visited = true;
+            // Validate Not Null [Default Value Case]
+            if (node != null) {
+                // Update Visited Flag on Child Node
+                node.visited = true;
 
-            if (node.children.length != 0) {
-                // Check for Nested Operator
-                if (node.parent.name != "==" || node.parent.name != "!=") {
+                if (node.children.length != 0) {
+                    // Check for Nested Operator
+                    if (node.parent.name != "==" || node.parent.name != "!=") {
+                        type = "Memory";
+                        value = this.generateOperator(node);
+                        this.comparisonFlag = true;
+                    } else {
+                        this.emitError("Unsupported");
+                    }
+                } else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
+                    type = "Constant";
+                    if (node.name == "true") {
+                        value = this.boolPointers.true;
+                    } else if (node.name == "false") {
+                        value = this.boolPointers.false;
+                    } else {
+                        value = "0" + node.name;
+                    }
+                } else if (node.name.indexOf("\"") > -1) {
+                    type = "Constant";
+
+                    // Get Dynamic Pointer from Heap
+                    value = this.appendHeap(node.name);
+                } else {
                     type = "Memory";
-                    value = this.generateOperator(node);
-                    this.comparisonFlag = true;
-                } else {
-                    this.emitError("Unsupported");
-                }
-            } else if (!isNaN(node.name) || node.name == "true" || node.name == "false") {
-                type = "Constant";
-                if (node.name == "true") {
-                    value = this.boolPointers.true;
-                } else if (node.name == "false") {
-                    value = this.boolPointers.false;
-                } else {
-                    value = "0" + node.name;
-                }
-            } else if (node.name.indexOf("\"") > -1) {
-                type = "Constant";
 
-                // Get Dynamic Pointer from Heap
-                value = this.appendHeap(node.name);
-            } else {
-                type = "Memory";
-
-                // Get Static Pointer from Static Data
-                value = this.appendStack(node.name, this.scope);
-            }
+                    // Get Static Pointer from Static Data
+                    value = this.appendStack(node.name, this.scope);
+                }
 
             } else {
                 type = "Constant";
@@ -483,8 +483,18 @@ module CSCompiler {
                         this.appendText(value);
                         this.appendText("00");
 
-                        // Load X Reg w/ 02
-                        this.handleXReg("Load", "Constant", "02");
+                        // Check for Static Variable
+                        if (value.charAt(0) == "T") {
+                            type = this.getTrueType(value);
+                        }
+
+                        if (type == "Constant") {
+                            // Load X Reg w/ 01
+                            this.handleXReg("Load", "Constant", "01");
+                        } else {
+                            // Load X Reg w/ 02
+                            this.handleXReg("Load", "Constant", "02");
+                        }
                     } else {
                         this.appendText("A0");
                         this.appendText(value);
@@ -681,8 +691,8 @@ module CSCompiler {
 
             // Check to Correct Scope to Decleration Scope
             if (type == "Stack") {
-                var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope);
-
+                var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope, "Used");
+            
                 if (decScope != -1) {
                     scope = decScope;
                 }
@@ -696,6 +706,13 @@ module CSCompiler {
                         case "Stack":
                             if (list[entry].value == value && list[entry].scope == scope) {
                                 pointer = list[entry].pointer;
+                                break out;
+                            }
+                            break;
+
+                        case "Stack-Value":
+                            if (list[entry].value == value && list[entry].scope == scope) {
+                                pointer = list[entry].value;
                                 break out;
                             }
                             break;
@@ -832,6 +849,23 @@ module CSCompiler {
     
                 // Flip Generating Flag 
                 this.generating = false;
+            }
+        }
+
+        /**
+         * getTrueType(address)
+         * - Given a Static Address determine
+         *   the values true Data Type
+         */
+        public getTrueType(address) {
+            // Get True Value of Temp Address
+            var trueValue = this.staticData.filter((t) => t.pointer == address)[0].value;
+            var type = this.symbolTable.seekTableEntry(this.symbolTable.root, trueValue, this.scope, "Used-Type");
+
+            if (type == "int") {
+                return "Constant";
+            } else {
+                return "Memory"
             }
         }
 
