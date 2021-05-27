@@ -135,6 +135,9 @@ module CSCompiler {
                                 _CodeGeneration.init(_SemanticAnalyzer.ast, _SemanticAnalyzer.symbolTable.root)
                                 _CodeGeneration.generate(_CodeGeneration.ast.root)
 
+                                // Backpatch Executable Image
+                                _CodeGeneration.backpatch();
+
                                 // Announce Completion
                                 _Log.output({level: "INFO", data: "Code Generation Complete. " + _CodeGeneration.errors + " ERROR(S)\n"});
 

@@ -64,14 +64,13 @@ module CSCompiler {
          */
         public generate(node) {
             if (this.generating) {  // [General Case]
-                console.log("GENERATE: Current Node: " + node.name);
                 // Update Visited Flag on Node
                 node.visited = true;
 
                 // Check if Current Node is Block
                 if (node.name == "Block") {
                     // Increment Scope for New Block
-                    this.scope++;
+                    this.scope = this.scope + 1;
 
                     // Recursivley Call Children
                     if (node.children.length) {
@@ -84,7 +83,6 @@ module CSCompiler {
                     var block = _Blocks.filter((b) => {return b.name == node.name})[0];
 
                     if (block) {
-                        console.log(node.name + " found in Blocks");
                         // EmitAction on current Node + Get Basic Block Reference
                         this.emitAction("Production", node.name, node.data);
 
@@ -100,7 +98,6 @@ module CSCompiler {
                             // Check if Operator Found in First Segement
                             if (this.comparisonFlag) {
                                 // Execute Comparison Generation for First Child of Production
-                                console.log("GENERATE: Recognized ComparisonFlag!");
                                 this.generateComparison(node.name, node.children[block.first.child].name, "00");
                                 this.comparisonFlag = false;
                             }
@@ -109,7 +106,6 @@ module CSCompiler {
                         // Proceed to Children for current Node
                         for (var child in node.children) {
                             if (!(node.children[child].visited)) {
-                                console.log("Calling Generate on " + node.children[child].name);
                                 this.generate(node.children[child]);
                             }
                         }
@@ -120,28 +116,28 @@ module CSCompiler {
                         } else {
                             block.final.generate();
                         }
-
-                        // On Block Exit -- Check if Distance can be Calculated for Active Jumps
-                        if (node.name == "Block") {
-                            if (this.activeJumps.length > 0) {
-                                // Check Parent of Current Nose to Determine Calculation
-                                if (node.parent == "WhileStatement") {
-                                    this.appendJump(this.activeJumps[1].value, padHex(((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase()));
-                                    this.appendJump(this.activeJumps[0].value, padHex(this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase()));
-
-                                    // Remove Jumps from Active List
-                                    this.activeJumps.filter((j) => { return j.jump.value != this.activeJumps[0].value || j.jump.value != this.activeJumps[1].value});
-
-                                } else {
-                                    // Calculate Distance for Jump
-                                    this.appendJump(this.activeJumps[0].value, padHex((this.textIndex - this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase()));
-
-                                    // Remove Jump from Active List
-                                    this.activeJumps.filter((j) => { return j.value != this.activeJumps[0].jump.value});
-                                }
-                            }
-                        }
                     } 
+                }
+
+                // On Block Exit -- Check if Distance can be Calculated for Active Jumps
+                if (node.name == "Block") {
+                    if (this.activeJumps.length > 0) {
+                        // Check Parent of Current Nose to Determine Calculation
+                        if (node.parent.name == "WhileStatement") {
+                            this.appendJump(this.activeJumps[1].pointer, padHex((((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase())));
+                            this.appendJump(this.activeJumps[0].pointer, padHex((this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase())));
+
+                            // Remove Jumps from Active List
+                            this.activeJumps.filter((j) => { return j.pointer != this.activeJumps[0].pointer || j.pointer != this.activeJumps[1].pointer});
+
+                        } else {
+                            // Calculate Distance for Jump
+                            this.appendJump(this.activeJumps[0].pointer, padHex(((this.textIndex - (this.activeJumps[0].start + 2)).toString(16).toLocaleUpperCase())));
+
+                            // Remove Jump from Active List
+                            this.activeJumps.filter((j) => { return j.pointer != this.activeJumps[0].pointer});
+                        }
+                    }
                 }
 
             } else {                // [Base Case] - Exit
@@ -159,27 +155,21 @@ module CSCompiler {
             // Determine Node Type
             var data = this.getType(node);
 
-            console.log("ALLOCATE: Action " + action + " for register " + reg);
-            if (node != null) {
-                console.log("ALLOCATE: Returned from GetType w/ type " + data.type + " for " + node.name);
-            }
-
             // Don't Execute Action on Operator Node
-            if (this.comparisonFlag || node.parent.name == "IfStatement" || node.parent.name == "WhileStatement") {
-                return; 
+            if (node != null) {
+                if (this.comparisonFlag || node.parent.name == "IfStatement" || node.parent.name == "WhileStatement") {
+                    return; 
+                }
             }
             
             switch(reg) {
                 case "Acc":
-                    console.log("ALLOCATE: Hit on Acc Reg!");
                     this.handleAcc(action, data.type, data.value);
                     break;
                 case "XReg":
-                    console.log("ALLOCATE: Hit on X Reg!");
                     this.handleXReg(action, data.type, data.value);
                     break;
                 case "YReg":
-                    console.log("ALLOCATE: Hit on Y Reg!");
                     this.handleYReg(action, data.type, data.value);
                     break;
 
@@ -552,8 +542,6 @@ module CSCompiler {
          *   Image. 
          */
         public appendText(text) {
-            console.log("APPENDTEXT: text sent " + text + " at index " + this.textIndex);
-
             // Add Byte to Executable Image
             this.image[this.textIndex] = text;
 
@@ -596,7 +584,7 @@ module CSCompiler {
         }
 
         /**
-         * appendJump(dist?) 
+         * appendJump(id, dist?) 
          * - AppendJump is used to create entries 
          *   to our JumpData. It will return a new
          *   temporary jump ID. Dist is used for sitautions
@@ -604,31 +592,32 @@ module CSCompiler {
          *   a entry.
          */
         public appendJump(id, dist?) {
+            console.log("APPENDJUMP: id given: " + id);
             // Check if Entry Exists
             var value = this.getEntry(id, this.jumpData);
 
             if (value == "") {
                 // Generate New Jump Object
-                var entry = {value: "J" + this.jumpData.length, distance: 0, start: this.textIndex - 1};
+                var entry = {pointer: "J" + this.jumpData.length, distance: 0, start: this.textIndex - 1}; // -1 could fuck up while
 
                 // Check if Distance is already known
                 if (dist) {
                     entry.distance = dist;
+                    console.log("APPENDJUMP: Distance " + entry.distance); 
                 }
 
                 // Push Entry to Jump Data + ActiveJumps
                 this.jumpData.push(entry);
                 this.activeJumps.push(entry);
 
-                return entry.value;
+                return entry.pointer;
             } else {
-                // Convert Dist to Hex
-                dist = dist.toString(16).toLocaleUpperCase();
-
                 for (var j in this.jumpData) {
-                    if (this.jumpData[j].value = id) {
-                        this.jumpData[j].distance = dist;
-                        return dist; 
+                    if (this.jumpData[j].pointer == id) {
+                        if (dist) {
+                            this.jumpData[j].distance = dist;
+                            return dist; 
+                        }
                     }
                 }
             }
@@ -687,20 +676,74 @@ module CSCompiler {
             var pointer = "";
 
             // Seek Value in List
+            out:
             if (list.length > 0) {
                 for (var entry in list) {
                     if (scope) {
                         if (list[entry].value == value && list[entry].scope == scope) {
                             pointer = list[entry].pointer;
+                            break out;
                         }
                     } else {
-                        if (list[entry].value == value) {
+                        if (list[entry].pointer == value) {
                             pointer = list[entry].pointer;
+                            break out;
                         }
                     }
                 }
             }
             return pointer; 
+        }
+
+        /**
+         * backpatch()
+         * - Backpatch is used to define our Stack
+         *   and update all temporary values for 
+         *   our Static Data and Jumps in our
+         *   Executable Image.
+         */
+        public backpatch() {
+            // Define StaticArea
+            var staticIndex = this.textIndex + 2 // Include 00 Delimeter for Source Program
+
+            // Check for Collision
+            if (staticIndex + this.staticData.length >= this.heapIndex) {
+                // EmitError
+                this.emitError("Collision", {first: "Stack", second: "Heap"});
+            } else {
+                // Populate Addresses
+                for (var i = 0; i < this.staticData.length; i++) {
+                    var address = padHex(staticIndex.toString(16).toLocaleUpperCase()); 
+
+                    // Update Location Attribute + Increment StaticIndex
+                    this.staticData[i].location = address;
+                    staticIndex++;
+                }
+            }
+
+            // Update Image for Address + Distance
+            for (var i = 0; i < this.image.length; i++) {
+                if (this.image[i].charAt(0) == "T") {
+                    // Find Temp in Static Data
+                    var entry = this.staticData.filter((s) => { return s.pointer == this.image[i]})[0];
+
+                    // Update Byte
+                    this.image[i] = entry.location;
+
+                    // EmitAction
+                    this.emitAction("Byte-Address", entry.pointer, {address: entry.location, index: i});
+
+                } else if (this.image[i].charAt(0) == "J") {
+                    // Find Temp in Jump Data
+                    var entry = this.jumpData.filter((j) => { return j.pointer == this.image[i]})[0];
+
+                    // Update Byte
+                    this.image[i] = entry.distance;
+
+                    // EmitAction
+                    this.emitAction("Byte-Jump", entry.pointer, {distance: entry.distance, index: i});
+                }
+            }
         }
 
         /**
@@ -710,21 +753,31 @@ module CSCompiler {
          */
          public emitAction(type, value, data?) {
             var data;
-            switch(type) {
-                case "Production":
-                    data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
-                    break;
+            if (this.generating) {
+                switch(type) {
+                    case "Production":
+                        data = "Generating for [ " + value + " ] on line: " + data.line + " on col: " + data.col;
+                        break;
+    
+                    case "Byte":
+                        data = "Generating [ " + value + " ] at index: " + data.index;
+                        break;
+    
+                    case "Byte-Address":
+                        data = "Backpatched [ " + value + " ] with Static Address [ " + data.address + " ] at index: " + data.index;
+                        break;
 
-                case "Byte":
-                    data = "Generating [ " + value + " ] at index " + data.index;
-                    break;
-
-                default: 
-                    break;
+                    case "Byte-Jump":
+                        data = "Backpatched [ " + value + " ] with Distance [ " + data.address + " ] at index: " + data.index;
+                        break
+    
+                    default: 
+                        break;;
+                }
+    
+                // Output Image Entry to User
+                _Log.output({level: "DEBUG", data: data});
             }
-
-            // Output Image Entry to User
-            _Log.output({level: "DEBUG", data: data});
         }
 
         public emitError(type, data?) {
