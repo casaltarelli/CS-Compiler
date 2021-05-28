@@ -21,7 +21,7 @@ var CSCompiler;
             if (heapData === void 0) { heapData = null; }
             if (scope === void 0) { scope = -1; }
             if (textIndex === void 0) { textIndex = 0; }
-            if (heapIndex === void 0) { heapIndex = 256; }
+            if (heapIndex === void 0) { heapIndex = 255; }
             if (activeJumps === void 0) { activeJumps = []; }
             if (boolPointers === void 0) { boolPointers = { "true": "", "false": "" }; }
             if (whilePointers === void 0) { whilePointers = { start: 0, branch: 0 }; }
@@ -56,7 +56,7 @@ var CSCompiler;
             this.heapData = [];
             this.scope = -1;
             this.textIndex = 0;
-            this.heapIndex = 256;
+            this.heapIndex = 255;
             this.activeJumps = [];
             this.boolPointers = { "true": "", "false": "" };
             this.whilePointers = { start: 0, branch: 0 };

@@ -20,7 +20,7 @@ module CSCompiler {
                     public heapData = null,
                     public scope = -1,
                     public textIndex = 0,
-                    public heapIndex = 256,
+                    public heapIndex = 255,
                     public activeJumps = [],
                     public boolPointers = {true: "", false: ""},
                     public whilePointers = {start: 0, branch: 0},
@@ -41,7 +41,7 @@ module CSCompiler {
             this.heapData = [];
             this.scope = -1;
             this.textIndex = 0;
-            this.heapIndex = 256;
+            this.heapIndex = 255;
             this.activeJumps = [];
             this.boolPointers = {true: "", false: ""};
             this.whilePointers = {start: 0, branch: 0}; 
