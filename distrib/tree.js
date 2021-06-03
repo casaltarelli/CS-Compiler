@@ -90,6 +90,35 @@ var CSCompiler;
             }
         };
         /**
+         * descendTree()
+         * - DescendTree allows for us to move down
+         *   our SymbolTable definitions. By accessing
+         *   either the nodes children or siblings
+         */
+        Tree.prototype.descendTree = function () {
+            // Check if Child or Sibling Exist
+            if (this.current.children != undefined) {
+                if (this.current.children.length > 0) {
+                    this.current = this.current.children[0];
+                }
+                else {
+                    var parent = this.current.parent;
+                    // Get Parent Reference
+                    var parent = this.current.parent;
+                    // Find Sibling -- If any
+                    var currentScope = this.current.scope;
+                    // Filter Children on Scope -- Get Next Child (Sibling)
+                    var sibling = parent.children.map(function (child) { return child.scope; }).indexOf(currentScope);
+                    if (sibling + 1 < parent.children.length) {
+                        return parent.children[sibling + 1];
+                    }
+                    else {
+                        return -1; // Not Found -- Should Never Happen Hopefully
+                    }
+                }
+            }
+        };
+        /**
          * descendTable(table)
          * - Used to perform a DFS of our
          *   SymbolTables in aiding to find
@@ -114,30 +143,40 @@ var CSCompiler;
                 }
             }
         };
-        Tree.prototype.seekTableEntry = function (t, key, scope, type) {
-            // Get Table Reference -- Start at Root 
-            var reference = t.table.get(key);
-            if (reference != -1) {
-                switch (type) {
-                    case "Used":
-                        // Check for Used Instance at Scope
-                        for (var entry in reference.used) {
-                            if (reference.used[entry].scope == scope) {
-                                return reference.declared.scope;
+        // public getParentTable(table) {
+        //     if (table.parent != undefined) {
+        //         return table.parent; 
+        //     } else {
+        //         return undefined;
+        //     }
+        // }
+        Tree.prototype.seekTableEntry = function (t, key, scope, action) {
+            if (t.table != undefined) {
+                // Get Table Reference -- Start at Root 
+                var reference = t.table.get(key);
+                if (reference != -1) {
+                    switch (action) {
+                        case "Used":
+                            // Check for Used Instance at Scope
+                            for (var entry in reference.used) {
+                                if (reference.used[entry].scope == scope) {
+                                    return reference.declared.scope;
+                                }
                             }
-                        }
-                    case "Used-Type":
-                        // Check for Used Instance at Scope
-                        for (var entry in reference.used) {
-                            if (reference.used[entry].scope == scope) {
-                                return reference.type;
+                        case "Used-Type":
+                            // Check for Used Instance at Scope
+                            for (var entry in reference.used) {
+                                if (reference.used[entry].scope == scope) {
+                                    return reference.type;
+                                }
                             }
-                        }
+                    }
                 }
-            }
-            else {
-                // Descend Table to next Child or Sibling
-                return this.seekTableEntry(this.descendTable(t), key, scope, type);
+                else {
+                    // Descend Table to next Child or Sibling
+                    return this.seekTableEntry(this.descendTable(t), key, scope, action);
+                    //return this.seekTableEntry(this.getParentTable(t), key, scope, action);
+                }
             }
             return -1;
         };

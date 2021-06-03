@@ -23,7 +23,7 @@ module CSCompiler {
                     public heapIndex = 255,
                     public activeJumps = [],
                     public boolPointers = {true: "", false: ""},
-                    public whilePointers = {start: 0, branch: 0},
+                    public whilePointers = [],
                     public image = []) {}
 
         public init(ast: Tree, symbolTable: Tree) {
@@ -44,7 +44,7 @@ module CSCompiler {
             this.heapIndex = 255;
             this.activeJumps = [];
             this.boolPointers = {true: "", false: ""};
-            this.whilePointers = {start: 0, branch: 0}; 
+            this.whilePointers = []; 
             this.image = [];
 
             // Inititalize Executable Image
@@ -69,8 +69,9 @@ module CSCompiler {
 
                 // Check if Current Node is Block
                 if (node.name == "Block") {
-                    // Increment Scope for New Block
+                    // Increment Scope for New Block + Descend our Symbol Table
                     this.scope++;
+                    this.symbolTable.descendTree();
 
                     // Recursivley Call Children - Kickoff
                     if (node.children.length) {
@@ -88,7 +89,7 @@ module CSCompiler {
 
                         // Check for White Statement Block -- Collect Start Point
                         if (block.name == "WhileStatement") {
-                            this.whilePointers.start = this.textIndex;
+                            this.whilePointers.push(this.textIndex);
                         }
 
                         // Check if we need to Allocate First Segment
@@ -114,36 +115,46 @@ module CSCompiler {
                         if (block.final.allocate) {
                             this.allocate(block.register, block.final.action, node.children[block.final.child]);
                         } else {
-                            block.final.generate();
+                            block.final['generate']();
                         }
                     } 
                 }
 
                 // On Block Exit -- Check if Distance can be Calculated for Active Jumps + Decrement Scope
                 if (node.name == "Block") {
+                    // Update Scope + SymbolTable Node
                     this.scope--; 
+                    this.symbolTable.ascendTree(); 
+
                     if (this.activeJumps.length > 0) {
-                        // Check Parent of Current Nose to Determine Calculation
+                        // Check Parent of Current Node to Determine Calculation
                         if (node.parent.name == "WhileStatement") {
-                            // Start Jump Distance
-                            this.appendJump(this.activeJumps[1].pointer, padHex((((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase())));
+                            // Generate Unconditional Jump 
+                            this.generateJump();
 
-                            // Branch Jump Distance
-                            this.appendJump(this.activeJumps[0].pointer, padHex((this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase())));
+                            // Get Current ActiveJumps Length
+                            var currentLength = this.activeJumps.length;  
 
-                            // Remove Jumps from Active List
-                            this.activeJumps.filter((j) => { return j.pointer != this.activeJumps[0].pointer || j.pointer != this.activeJumps[1].pointer});
+                            // Define Start + Branch Jumps
+                            this.appendJump(this.activeJumps[currentLength - 1].pointer, padHex((this.image.length - this.textIndex + this.whilePointers[this.whilePointers.length - 1]).toString(16).toLocaleUpperCase()));
+                            this.appendJump(this.activeJumps[currentLength - 2].pointer, padHex(((this.textIndex - (this.activeJumps[currentLength - 2].start + 2)).toString(16).toLocaleUpperCase())));
 
-                        } else {
+                            // Remove Jumps from Active List + WhilePointers
+                            this.activeJumps = this.activeJumps.filter((j) => { return j.pointer != this.activeJumps[currentLength - 1].pointer || j.pointer != this.activeJumps[this.activeJumps.length - 2].pointer});
+                            this.whilePointers = this.whilePointers.filter((p) => { return p != this.whilePointers[this.whilePointers.length - 1]})
+
+                        } else if (node.parent.name == "IfStatement") {
+                            // Get Current ActiveJumps Length
+                            var currentLength = this.activeJumps.length; 
+
                             // Calculate Distance for Jump
-                            this.appendJump(this.activeJumps[0].pointer, padHex(((this.textIndex - (this.activeJumps[0].start + 2)).toString(16).toLocaleUpperCase())));
+                            this.appendJump(this.activeJumps[currentLength - 1].pointer, padHex(((this.textIndex - (this.activeJumps[currentLength - 1].start + 2)).toString(16).toLocaleUpperCase())));
 
                             // Remove Jump from Active List
-                            this.activeJumps.filter((j) => { return j.pointer != this.activeJumps[0].pointer});
+                            this.activeJumps = this.activeJumps.filter((j) => { return j.pointer != this.activeJumps[currentLength - 1].pointer});
                         }
                     }
                 }
-
             } else {                // [Base Case] - Exit
                 return; 
             }
@@ -420,6 +431,21 @@ module CSCompiler {
         }
 
         /**
+         * generateJump()
+         * - GenerateJump is used to generate
+         *   an unconditional Jump for all While
+         *   Statements.
+         */
+         public generateJump() {
+            this.handleAcc("Load", "Constant", "00"); 
+            this.handleAcc("Store", "Memory", "00"); 
+            this.handleXReg("Load", "Constant", "01"); 
+            this.handleXReg("Compare", "Memory", "00"); 
+            this.appendText("D0"); 
+            this.appendText(this.appendJump(this.jumpData.length));
+        }
+
+        /**
          * handleAcc(action, type, value)
          * - HandleAcc allows for us to generate
          *   any needed Op Codes regarding the Acc.
@@ -692,6 +718,7 @@ module CSCompiler {
             // Check to Correct Scope to Decleration Scope
             if (type == "Stack") {
                 var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope, "Used");
+                // var decScope = this.symbolTable.seekTableEntry(this.symbolTable.current, value, scope, "Used");
             
                 if (decScope != -1) {
                     scope = decScope;
@@ -748,7 +775,7 @@ module CSCompiler {
          */
         public backpatch() {
             // Define StaticArea
-            var staticIndex = this.textIndex + 2 // Include 00 Delimeter for Source Program
+            var staticIndex = this.textIndex + 1 // Include 00 Delimeter for Source Program
 
             // Check for Collision
             if (staticIndex + this.staticData.length >= this.heapIndex) {
@@ -853,7 +880,7 @@ module CSCompiler {
         }
 
         /**
-         * getTrueType(address)
+         * getTrueType(address, register?)
          * - Given a Static Address determine
          *   the values true Data Type
          */
@@ -861,6 +888,7 @@ module CSCompiler {
             // Get True Value of Temp Address
             var trueValue = this.staticData.filter((t) => t.pointer == address)[0].value;
             var type = this.symbolTable.seekTableEntry(this.symbolTable.root, trueValue, this.scope, "Used-Type");
+            //var type = this.symbolTable.seekTableEntry(this.symbolTable.current, trueValue, this.scope, "Used-Type");
 
             if (type == "int") {
                 return "Constant";

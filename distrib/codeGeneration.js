@@ -24,7 +24,7 @@ var CSCompiler;
             if (heapIndex === void 0) { heapIndex = 255; }
             if (activeJumps === void 0) { activeJumps = []; }
             if (boolPointers === void 0) { boolPointers = { "true": "", "false": "" }; }
-            if (whilePointers === void 0) { whilePointers = { start: 0, branch: 0 }; }
+            if (whilePointers === void 0) { whilePointers = []; }
             if (image === void 0) { image = []; }
             this.ast = ast;
             this.symbolTable = symbolTable;
@@ -59,7 +59,7 @@ var CSCompiler;
             this.heapIndex = 255;
             this.activeJumps = [];
             this.boolPointers = { "true": "", "false": "" };
-            this.whilePointers = { start: 0, branch: 0 };
+            this.whilePointers = [];
             this.image = [];
             // Inititalize Executable Image
             this.initImage();
@@ -81,8 +81,9 @@ var CSCompiler;
                 node.visited = true;
                 // Check if Current Node is Block
                 if (node.name == "Block") {
-                    // Increment Scope for New Block
+                    // Increment Scope for New Block + Descend our Symbol Table
                     this.scope++;
+                    this.symbolTable.descendTree();
                     // Recursivley Call Children - Kickoff
                     if (node.children.length) {
                         for (var c in node.children) {
@@ -98,7 +99,7 @@ var CSCompiler;
                         this.emitAction("Production", node.name, node.data);
                         // Check for White Statement Block -- Collect Start Point
                         if (block.name == "WhileStatement") {
-                            this.whilePointers.start = this.textIndex;
+                            this.whilePointers.push(this.textIndex);
                         }
                         // Check if we need to Allocate First Segment
                         if (block.first.allocate) {
@@ -121,28 +122,36 @@ var CSCompiler;
                             this.allocate(block.register, block.final.action, node.children[block.final.child]);
                         }
                         else {
-                            block.final.generate();
+                            block.final['generate']();
                         }
                     }
                 }
                 // On Block Exit -- Check if Distance can be Calculated for Active Jumps + Decrement Scope
                 if (node.name == "Block") {
+                    // Update Scope + SymbolTable Node
                     this.scope--;
+                    this.symbolTable.ascendTree();
                     if (this.activeJumps.length > 0) {
-                        // Check Parent of Current Nose to Determine Calculation
+                        // Check Parent of Current Node to Determine Calculation
                         if (node.parent.name == "WhileStatement") {
-                            // Start Jump Distance
-                            this.appendJump(this.activeJumps[1].pointer, padHex((((this.image.length - this.textIndex) + this.whilePointers.start).toString(16).toLocaleUpperCase())));
-                            // Branch Jump Distance
-                            this.appendJump(this.activeJumps[0].pointer, padHex((this.textIndex - (this.activeJumps[0].start + 2).toString(16).toLocaleUpperCase())));
-                            // Remove Jumps from Active List
-                            this.activeJumps.filter(function (j) { return j.pointer != _this.activeJumps[0].pointer || j.pointer != _this.activeJumps[1].pointer; });
+                            // Generate Unconditional Jump 
+                            this.generateJump();
+                            // Get Current ActiveJumps Length
+                            var currentLength = this.activeJumps.length;
+                            // Define Start + Branch Jumps
+                            this.appendJump(this.activeJumps[currentLength - 1].pointer, padHex((this.image.length - this.textIndex + this.whilePointers[this.whilePointers.length - 1]).toString(16).toLocaleUpperCase()));
+                            this.appendJump(this.activeJumps[currentLength - 2].pointer, padHex(((this.textIndex - (this.activeJumps[currentLength - 2].start + 2)).toString(16).toLocaleUpperCase())));
+                            // Remove Jumps from Active List + WhilePointers
+                            this.activeJumps = this.activeJumps.filter(function (j) { return j.pointer != _this.activeJumps[currentLength - 1].pointer || j.pointer != _this.activeJumps[_this.activeJumps.length - 2].pointer; });
+                            this.whilePointers = this.whilePointers.filter(function (p) { return p != _this.whilePointers[_this.whilePointers.length - 1]; });
                         }
-                        else {
+                        else if (node.parent.name == "IfStatement") {
+                            // Get Current ActiveJumps Length
+                            var currentLength = this.activeJumps.length;
                             // Calculate Distance for Jump
-                            this.appendJump(this.activeJumps[0].pointer, padHex(((this.textIndex - (this.activeJumps[0].start + 2)).toString(16).toLocaleUpperCase())));
+                            this.appendJump(this.activeJumps[currentLength - 1].pointer, padHex(((this.textIndex - (this.activeJumps[currentLength - 1].start + 2)).toString(16).toLocaleUpperCase())));
                             // Remove Jump from Active List
-                            this.activeJumps.filter(function (j) { return j.pointer != _this.activeJumps[0].pointer; });
+                            this.activeJumps = this.activeJumps.filter(function (j) { return j.pointer != _this.activeJumps[currentLength - 1].pointer; });
                         }
                     }
                 }
@@ -381,6 +390,20 @@ var CSCompiler;
                     console.log("Unrecognized Node for Generate Comparison");
                     break;
             }
+        };
+        /**
+         * generateJump()
+         * - GenerateJump is used to generate
+         *   an unconditional Jump for all While
+         *   Statements.
+         */
+        CodeGeneration.prototype.generateJump = function () {
+            this.handleAcc("Load", "Constant", "00");
+            this.handleAcc("Store", "Memory", "00");
+            this.handleXReg("Load", "Constant", "01");
+            this.handleXReg("Compare", "Memory", "00");
+            this.appendText("D0");
+            this.appendText(this.appendJump(this.jumpData.length));
         };
         /**
          * handleAcc(action, type, value)
@@ -629,6 +652,7 @@ var CSCompiler;
             // Check to Correct Scope to Decleration Scope
             if (type == "Stack") {
                 var decScope = this.symbolTable.seekTableEntry(this.symbolTable.root, value, scope, "Used");
+                // var decScope = this.symbolTable.seekTableEntry(this.symbolTable.current, value, scope, "Used");
                 if (decScope != -1) {
                     scope = decScope;
                 }
@@ -678,7 +702,7 @@ var CSCompiler;
         CodeGeneration.prototype.backpatch = function () {
             var _this = this;
             // Define StaticArea
-            var staticIndex = this.textIndex + 2; // Include 00 Delimeter for Source Program
+            var staticIndex = this.textIndex + 1; // Include 00 Delimeter for Source Program
             // Check for Collision
             if (staticIndex + this.staticData.length >= this.heapIndex) {
                 // EmitError
@@ -766,7 +790,7 @@ var CSCompiler;
             }
         };
         /**
-         * getTrueType(address)
+         * getTrueType(address, register?)
          * - Given a Static Address determine
          *   the values true Data Type
          */
@@ -774,6 +798,7 @@ var CSCompiler;
             // Get True Value of Temp Address
             var trueValue = this.staticData.filter(function (t) { return t.pointer == address; })[0].value;
             var type = this.symbolTable.seekTableEntry(this.symbolTable.root, trueValue, this.scope, "Used-Type");
+            //var type = this.symbolTable.seekTableEntry(this.symbolTable.current, trueValue, this.scope, "Used-Type");
             if (type == "int") {
                 return "Constant";
             }

@@ -14,8 +14,6 @@
         True    - Signifies for this action allocate generation to one our our Register Handlers.
         False   - The First or Final is simple enough to be handled within the Basic Block.
 
-
-
 ----- */
 var _Blocks = [
     { name: "VarDecl", register: "Acc", first: { allocate: true, child: null, action: "Load" },
@@ -27,13 +25,5 @@ var _Blocks = [
     { name: "IfStatement", register: "XReg", first: { allocate: true, child: 0, action: "Compare" },
         final: { allocate: false, generate: function () { return; } } },
     { name: "WhileStatement", register: "XReg", first: { allocate: true, child: 0, action: "Compare" },
-        final: { allocate: false,
-            generate: function () {
-                _CodeGeneration.handleAcc("Load", "Constant", "00");
-                _CodeGeneration.handleAcc("Store", "Memory", "00");
-                _CodeGeneration.handleXReg("Load", "Constant", "01");
-                _CodeGeneration.handleXReg("Compare", "Constant", "00");
-                _CodeGeneration.appendText("D0");
-                _CodeGeneration.appendText(_CodeGeneration.appendJump(_CodeGeneration.jumpData.length));
-            } } }
+        final: { allocate: false, generate: function () { return; } } }
 ];
